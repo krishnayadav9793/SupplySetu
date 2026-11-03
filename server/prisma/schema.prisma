@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// SupplySetu Prisma Schema for Supabase PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
@@ -17,12 +16,149 @@ enum Role {
   RETAILER
 }
 
+enum PriceTier {
+  STANDARD
+  TIER_1
+  TIER_2
+  WHOLESALE
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISPATCHED
+  DELIVERED
+}
+
+enum SchemeType {
+  BUY_X_GET_Y_FREE
+  PERCENTAGE_DISCOUNT
+  FLAT_DISCOUNT
+}
+
 model User {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  name      String
-  role      Role     @default(RETAILER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(uuid())
+  phone        String    @unique
+  passwordHash String
+  name         String
+  role         Role      @default(RETAILER)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  retailerProfile Retailer? @relation("UserRetailer")
+  assignedRetailers Retailer[] @relation("SalesmanRetailers")
+  ordersPlaced     Order[]    @relation("SalesmanOrders")
+}
+
+model Retailer {
+  id                 String    @id @default(uuid())
+  userId             String    @unique
+  shopName           String
+  ownerName          String
+  phone              String
+  address            String
+  city               String    @default("Jabalpur")
+  state              String    @default("Madhya Pradesh")
+  pincode            String?
+  gstNumber          String?
+  creditLimit        Float     @default(50000.0)
+  outstandingBalance Float     @default(0.0)
+  priceTier          PriceTier @default(STANDARD)
+  salesmanId         String?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation("UserRetailer", fields: [userId], references: [id], onDelete: Cascade)
+  salesman           User?     @relation("SalesmanRetailers", fields: [salesmanId], references: [id])
+  orders             Order[]
+}
+
+model Product {
+  id          String     @id @default(uuid())
+  skuCode     String     @unique
+  name        String
+  brand       String
+  category    String
+  unit        String     @default("BOX")
+  packSize    String
+  mrp         Float
+  basePrice   Float
+  gstRate     Float      @default(18.0) // Percentage (e.g. 5, 12, 18)
+  isAvailable Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  inventory   Inventory?
+  orderItems  OrderItem[]
+  schemes     Scheme[]   @relation("PrimaryProductSchemes")
+  freeInSchemes Scheme[] @relation("FreeProductSchemes")
+}
+
+model Inventory {
+  id            String   @id @default(uuid())
+  productId     String   @unique
+  stockQuantity Int      @default(0)
+  minOrderQty   Int      @default(1)
+  updatedAt     DateTime @updatedAt
+
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Scheme {
+  id              String     @id @default(uuid())
+  name            String
+  schemeType      SchemeType
+  minQuantity     Int        @default(1)
+  freeQuantity    Int        @default(0)
+  discountPercent Float      @default(0.0)
+  productId       String
+  freeProductId   String?
+  startDate       DateTime   @default(now())
+  endDate         DateTime?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  product         Product    @relation("PrimaryProductSchemes", fields: [productId], references: [id], onDelete: Cascade)
+  freeProduct     Product?   @relation("FreeProductSchemes", fields: [freeProductId], references: [id])
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  orderNumber    String      @unique
+  retailerId     String
+  salesmanId     String?
+  status         OrderStatus @default(PENDING)
+  totalAmount    Float       @default(0.0)
+  discountAmount Float       @default(0.0)
+  gstAmount      Float       @default(0.0)
+  finalAmount    Float       @default(0.0)
+  notes          String?
+  createdVia     String      @default("PORTAL") // PORTAL, AI_CAPTURE, SALESMAN_APP, OFFLINE_SYNC
+  isSynced       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  retailer       Retailer    @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  salesman       User?       @relation("SalesmanOrders", fields: [salesmanId], references: [id])
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id             String   @id @default(uuid())
+  orderId        String
+  productId      String
+  quantity       Int
+  unit           String   @default("BOX")
+  unitPrice      Float
+  gstRate        Float
+  discountAmount Float    @default(0.0)
+  freeQuantity   Int      @default(0)
+  totalPrice     Float
+
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 }

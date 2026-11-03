@@ -1,21 +1,22 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { config } from './config';
+import authRoutes from './modules/auth/auth.routes';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: config.clientUrl,
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// API Routes
+app.use('/api/auth', authRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
@@ -23,6 +24,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'SupplySetu Backend API',
+    environment: config.nodeEnv,
   });
 });
 
@@ -44,9 +46,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Start Server
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`[SupplySetu Server] running on http://localhost:${PORT}`);
+if (config.nodeEnv !== 'test') {
+  app.listen(config.port, () => {
+    console.log(`[SupplySetu Server] running on http://localhost:${config.port}`);
   });
 }
 
