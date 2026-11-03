@@ -5,8 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SupplySetu - AI B2B Distribution Platform</title>
+
+    <!-- Apple SF Pro Font CDN -->
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display" />
+
+    <!-- Script to prevent flash of wrong theme (FOUC) -->
+    <script>
+      (function() {
+        try {
+          const stored = localStorage.getItem('supplysetu-theme');
+          const isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 min-h-screen">
+  <body class="bg-[#F4F6F9] dark:bg-[#0C0E12] text-slate-900 dark:text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

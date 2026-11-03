@@ -3,5 +3,109 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* MacBook Typography Stack & Apple Smoothing */
+  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+
+  /* Light Theme Variables (from Light Theme screenshot) */
+  --theme-bg: #F4F6F9;
+  --theme-card: #FFFFFF;
+  --theme-elevated: #F8FAFC;
+  --theme-subtle: #F1F5F9;
+  --theme-border: #E2E8F0;
+  --theme-border-subtle: rgba(0, 0, 0, 0.06);
+  --theme-text-primary: #0F172A;
+  --theme-text-secondary: #64748B;
+  --theme-text-muted: #94A3B8;
+
+  /* Accent & Emerald Brand */
+  --brand-primary: #10B981;
+  --brand-gradient-start: #10B981;
+  --brand-gradient-end: #34D399;
+}
+
+.dark {
+  /* Dark Theme Variables (from Dark Theme screenshot) */
+  --theme-bg: #0C0E12;
+  --theme-card: #16181E;
+  --theme-elevated: #1C2028;
+  --theme-subtle: #222631;
+  --theme-border: #252A35;
+  --theme-border-subtle: rgba(255, 255, 255, 0.07);
+  --theme-text-primary: #FFFFFF;
+  --theme-text-secondary: #94A3B8;
+  --theme-text-muted: #64748B;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+@layer utilities {
+  /* Semantic theme helper classes */
+  .bg-theme-bg {
+    background-color: var(--theme-bg);
+  }
+
+  .bg-theme-card {
+    background-color: var(--theme-card);
+  }
+
+  .bg-theme-elevated {
+    background-color: var(--theme-elevated);
+  }
+
+  .bg-theme-subtle {
+    background-color: var(--theme-subtle);
+  }
+
+  .border-theme {
+    border-color: var(--theme-border);
+  }
+
+  .border-theme-subtle {
+    border-color: var(--theme-border-subtle);
+  }
+
+  .text-theme-primary {
+    color: var(--theme-text-primary);
+  }
+
+  .text-theme-secondary {
+    color: var(--theme-text-secondary);
+  }
+
+  .text-theme-muted {
+    color: var(--theme-text-muted);
+  }
+
+  .gradient-emerald {
+    background-image: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  }
+
+  .shadow-emerald {
+    box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.40);
+  }
 }
