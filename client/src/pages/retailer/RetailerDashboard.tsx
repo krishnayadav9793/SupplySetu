@@ -17,14 +17,29 @@ import { RetailerService } from '../../services/retailerService';
 import { ProductCard } from '../../components/catalogue/ProductCard';
 import { ProductSearchAndFilter } from '../../components/catalogue/ProductSearchAndFilter';
 import { CartSummaryBar } from '../../components/cart/CartSummaryBar';
+import { AiOrderPadModal } from '../../components/orders/AiOrderPadModal';
 
-export const RetailerDashboard = () => {
+export interface RetailerDashboardProps {
+  currentTab?: string;
+  setCurrentTab?: (tab: string) => void;
+}
+
+export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab, setCurrentTab }) => {
   const { user } = useAuth();
   const { totalItemsCount, setIsCartDrawerOpen } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategorySummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAiOrderPadOpen, setIsAiOrderPadOpen] = useState(false);
+
+  useEffect(() => {
+    if (currentTab === 'ai-pad') {
+      setIsAiOrderPadOpen(true);
+    } else if (currentTab === 'cart') {
+      setIsCartDrawerOpen(true);
+    }
+  }, [currentTab, setIsCartDrawerOpen]);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -188,9 +203,7 @@ export const RetailerDashboard = () => {
 
         <button
           type="button"
-          onClick={() => {
-            alert('AI Order Pad will activate in Phase 4. You can order directly via the catalogue below right now!');
-          }}
+          onClick={() => setIsAiOrderPadOpen(true)}
           className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2 hover:opacity-95 transition-all flex-shrink-0 cursor-pointer"
         >
           <span>Open AI Order Pad</span>
@@ -262,6 +275,17 @@ export const RetailerDashboard = () => {
 
       {/* Floating Bottom Cart Bar */}
       <CartSummaryBar />
+
+      {/* Interactive AI Order Capture Pad */}
+      <AiOrderPadModal
+        isOpen={isAiOrderPadOpen}
+        onClose={() => {
+          setIsAiOrderPadOpen(false);
+          if (currentTab === 'ai-pad' && setCurrentTab) {
+            setCurrentTab('shop');
+          }
+        }}
+      />
     </div>
   );
 };

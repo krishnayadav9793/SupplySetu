@@ -84,3 +84,53 @@ export interface CategorySummary {
   name: string;
   count: number;
 }
+
+export interface AiAlternative {
+  sku: string;
+  productName: string;
+  brand: string;
+  rate: number;
+  stock: number;
+  confidence: number;
+}
+
+export interface ValidatedAiOrderItem {
+  rawText: string;
+  sku: string;
+  productName: string;
+  brand: string;
+  category: string;
+  packSize: string;
+  requestedQuantity: number;
+  confirmedQuantity: number;
+  unit: string;
+  unitPrice: number;
+  mrp: number;
+  gstRate: number;
+  itemTotal: number;
+  stockAvailable: number;
+  isAvailable: boolean;
+  stockWarning: string | null;
+  confidence: number;
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  reasoning?: string;
+  alternatives: AiAlternative[];
+}
+
+export interface ValidatedAiOrderCaptureResult {
+  originalMessage: string;
+  parsedAt: string;
+  languageDetected: string;
+  items: ValidatedAiOrderItem[];
+  unrecognizedItems: string[];
+  totalEstimatedAmount: number;
+  totalUnitsCount: number;
+  hasStockWarnings: boolean;
+  hasLowConfidenceItems: boolean;
+}
+
+export interface SamplePrompt {
+  title: string;
+  message: string;
+  description: string;
+}
