@@ -6,6 +6,7 @@ import productRoutes from './modules/products/products.routes';
 import retailerRoutes from './modules/retailers/retailers.routes';
 import aiRoutes from './modules/ai/ai.routes';
 import orderRoutes from './modules/orders/orders.routes';
+import exportRoutes from './modules/exports/exports.routes';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/retailers', retailerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/exports', exportRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
