@@ -14,7 +14,7 @@ export const Header = ({ setCurrentTab }: HeaderProps) => {
   const { totalUniqueItems, setIsCartDrawerOpen } = useCart();
 
   return (
-    <header className="h-16 px-4 sm:px-6 border-b border-slate-100 dark:border-[#1E222A] flex items-center justify-between gap-4 bg-white dark:bg-[#121418] select-none">
+    <header className="h-16 w-full px-4 sm:px-6 border-b border-slate-200/80 dark:border-[#1E222A] flex items-center justify-between gap-4 bg-white dark:bg-[#121418] select-none flex-shrink-0 z-30">
       {/* Brand Logo & Search */}
       <div className="flex items-center gap-6 flex-1 max-w-xl">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentTab('home')}>

@@ -60,7 +60,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
   const navItems = getNavItems();
 
   return (
-    <aside className="w-16 border-r border-slate-100 dark:border-[#1E222A] bg-white dark:bg-[#121418] flex flex-col items-center py-4 gap-6 select-none flex-shrink-0">
+    <aside className="w-16 border-r border-slate-200/80 dark:border-[#1E222A] bg-white dark:bg-[#121418] flex flex-col items-center py-4 gap-6 select-none flex-shrink-0 z-20">
       {/* Top Group: Pages */}
       <div className="flex flex-col items-center gap-3 w-full">
         <span className="text-[9px] font-bold tracking-wider text-slate-400 dark:text-slate-400 uppercase">
