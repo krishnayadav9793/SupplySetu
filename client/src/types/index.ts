@@ -134,3 +134,68 @@ export interface SamplePrompt {
   message: string;
   description: string;
 }
+
+export type OrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISPATCHED' | 'DELIVERED';
+
+export interface OrderItemDetail {
+  id: string;
+  productId: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  gstRate: number;
+  discountAmount: number;
+  freeQuantity: number;
+  totalPrice: number;
+  product?: {
+    name: string;
+    skuCode: string;
+    brand: string;
+    packSize: string;
+  };
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  retailerId: string;
+  salesmanId?: string | null;
+  status: OrderStatus;
+  totalAmount: number;
+  discountAmount: number;
+  gstAmount: number;
+  finalAmount: number;
+  notes?: string | null;
+  createdVia: string;
+  createdAt: string;
+  creditStatus?: 'HOLD' | 'CLEARED';
+  creditExcessAmount?: number;
+  retailer: {
+    id: string;
+    shopName: string;
+    ownerName: string;
+    phone: string;
+    city: string;
+    creditLimit: number;
+    outstandingBalance: number;
+  };
+  salesman?: {
+    id: string;
+    name: string;
+    phone: string;
+  } | null;
+  items: OrderItemDetail[];
+  itemCount?: number;
+  totalUnitsCount?: number;
+  freeUnitsCount?: number;
+}
+
+export interface OrderDeskMetrics {
+  totalOrdersToday: number;
+  pendingOrders: number;
+  approvedOrders: number;
+  rejectedOrders: number;
+  totalGmv: number;
+  creditHoldCount: number;
+  activeSalesmenCount: number;
+}

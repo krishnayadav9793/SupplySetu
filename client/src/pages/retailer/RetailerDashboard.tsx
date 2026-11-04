@@ -8,12 +8,15 @@ import {
   RefreshCw,
   TrendingUp,
   Store,
+  Package,
+  Calendar,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { Product, CategorySummary } from '../../types';
+import { Product, CategorySummary, Order } from '../../types';
 import { ProductService } from '../../services/productService';
 import { RetailerService } from '../../services/retailerService';
+import { OrderService } from '../../services/orderService';
 import { ProductCard } from '../../components/catalogue/ProductCard';
 import { ProductSearchAndFilter } from '../../components/catalogue/ProductSearchAndFilter';
 import { CartSummaryBar } from '../../components/cart/CartSummaryBar';
@@ -24,12 +27,13 @@ export interface RetailerDashboardProps {
   setCurrentTab?: (tab: string) => void;
 }
 
-export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab, setCurrentTab }) => {
+export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab = 'shop', setCurrentTab }) => {
   const { user } = useAuth();
   const { totalItemsCount, setIsCartDrawerOpen } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAiOrderPadOpen, setIsAiOrderPadOpen] = useState(false);
 
@@ -69,7 +73,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
   const loadCatalogue = async () => {
     setLoading(true);
     try {
-      const [fetchedProducts, fetchedCategories, profile] = await Promise.all([
+      const [fetchedProducts, fetchedCategories, profile, orders] = await Promise.all([
         ProductService.getProducts({
           search: searchTerm,
           category: selectedCategory,
@@ -78,10 +82,12 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
         }),
         ProductService.getCategories(),
         RetailerService.getMyProfile(),
+        OrderService.listOrders(),
       ]);
 
       setProducts(fetchedProducts);
       setCategories(fetchedCategories);
+      setMyOrders(orders);
       if (profile) {
         setCreditProfile((prev) => ({
           ...prev,
@@ -104,7 +110,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
       {/* Top Banner: Retailer Welcome & Credit Khata Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Welcome & Shop Info */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 flex items-center gap-1">
@@ -129,7 +135,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
               <button
                 type="button"
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <ShoppingBag className="h-3.5 w-3.5" />
                 <span>View Cart ({totalItemsCount})</span>
@@ -139,10 +145,10 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
         </div>
 
         {/* Khata / Credit Limit Widget */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
+              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs">
                 <Wallet className="h-4 w-4" />
               </div>
               <div>
@@ -178,8 +184,11 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex items-center justify-between text-[11px] text-slate-400">
             <span>Salesman: {creditProfile.salesman?.name} ({creditProfile.salesman?.phone})</span>
-            <span className="text-emerald-500 font-semibold cursor-pointer hover:underline">
-              Ledger &rarr;
+            <span
+              onClick={() => setCurrentTab && setCurrentTab('my-orders')}
+              className="text-emerald-500 font-semibold cursor-pointer hover:underline"
+            >
+              Order History ({myOrders.length}) &rarr;
             </span>
           </div>
         </div>
@@ -211,67 +220,166 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
         </button>
       </div>
 
-      {/* Product Catalogue Section */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>FMCG Product Catalogue</span>
-              <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                Personalized Rates
-              </span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Showing official distributor wholesale rates & active promotional schemes for your shop
-            </p>
+      {/* Main Body: Toggle Between Catalogue vs Order History */}
+      {currentTab === 'my-orders' ? (
+        <div className="space-y-4 animate-fadeIn">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Placed Orders</h2>
+              <p className="text-xs text-slate-400">Track order approvals, dispatch status, and previous invoices</p>
+            </div>
+            <button
+              onClick={() => setCurrentTab && setCurrentTab('shop')}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Back to Catalogue
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={loadCatalogue}
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Refresh catalogue"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="space-y-3">
+            {myOrders.length === 0 ? (
+              <div className="py-16 text-center text-slate-400 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-semibold">No previous orders found</p>
+                <p className="text-xs mt-1">Place an order from the catalogue or AI pad to see it here.</p>
+              </div>
+            ) : (
+              myOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="rounded-2xl border border-slate-200/80 dark:border-[#222631] p-4 bg-white dark:bg-[#16181E] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                          {order.orderNumber}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            order.status === 'APPROVED'
+                              ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                              : order.status === 'REJECTED'
+                              ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
+                              : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {order.items.map((i) => `${i.product?.name || 'Product'} (${i.quantity} ${i.unit})`).join(', ')}
+                      </p>
+
+                      <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          {order.createdVia === 'AI_CAPTURE'
+                            ? 'AI WhatsApp'
+                            : order.createdVia === 'SALESMAN_APP'
+                            ? 'Salesman Punch'
+                            : 'Direct Web Portal'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right sm:border-l sm:border-slate-100 dark:sm:border-slate-800 sm:pl-6 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Amount</span>
+                      <span className="text-base font-bold text-slate-900 dark:text-white">
+                        ₹{order.finalAmount.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => alert(`Viewing tax invoice copy for ${order.orderNumber}`)}
+                      className="mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline cursor-pointer"
+                    >
+                      View Invoice &rarr;
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
+      ) : (
+        /* Product Catalogue Section */
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>FMCG Product Catalogue</span>
+                <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  Personalized Rates
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Showing official distributor wholesale rates & active promotional schemes for your shop
+              </p>
+            </div>
 
-        {/* Search, Filter Pills & In-stock toggle */}
-        <ProductSearchAndFilter
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          categories={categories}
-          inStockOnly={inStockOnly}
-          onInStockChange={setInStockOnly}
-          totalProductsCount={products.length}
-        />
+            <button
+              type="button"
+              onClick={loadCatalogue}
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Refresh catalogue"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
 
-        {/* Products Grid */}
-        {loading && products.length === 0 ? (
-          <div className="py-16 text-center text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-emerald-500" />
-            <p className="text-sm font-medium">Loading FMCG catalogue...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-            <TrendingUp className="w-10 h-10 mx-auto text-slate-400 mb-2 stroke-1" />
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              No products found
-            </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              Try adjusting your search terms or selecting a different category.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Search, Filter Pills & In-stock toggle */}
+          <ProductSearchAndFilter
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            categories={categories}
+            inStockOnly={inStockOnly}
+            onInStockChange={setInStockOnly}
+            totalProductsCount={products.length}
+          />
+
+          {/* Products Grid */}
+          {loading && products.length === 0 ? (
+            <div className="py-16 text-center text-slate-400">
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-emerald-500" />
+              <p className="text-sm font-medium">Loading FMCG catalogue...</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+              <TrendingUp className="w-10 h-10 mx-auto text-slate-400 mb-2 stroke-1" />
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                No products found
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Try adjusting your search terms or selecting a different category.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Floating Bottom Cart Bar */}
       <CartSummaryBar />
