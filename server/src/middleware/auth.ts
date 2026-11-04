@@ -41,6 +41,24 @@ export const authenticate = (
   }
 };
 
+export const optionalAuthenticate = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
+      req.user = decoded;
+    }
+  } catch (error) {
+    // If token invalid, proceed unauthenticated without crashing
+  }
+  next();
+};
+
 export const requireRoles = (...roles: Role[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {

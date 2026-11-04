@@ -1,143 +1,107 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Plus,
-  Percent,
-  Check,
   Wallet,
-  ArrowRight,
   Sparkles,
-  Search,
-  ShoppingCart,
+  ArrowRight,
   Clock,
+  ShoppingBag,
+  RefreshCw,
+  TrendingUp,
+  Store,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-
-interface SampleProduct {
-  id: string;
-  name: string;
-  brand: string;
-  category: string;
-  packSize: string;
-  mrp: number;
-  rate: number;
-  stock: number;
-  scheme?: string;
-}
-
-const SAMPLE_PRODUCTS: SampleProduct[] = [
-  {
-    id: 'p1',
-    name: 'Parle-G Glucose Biscuit (80g x 72 Pack)',
-    brand: 'Parle',
-    category: 'Biscuits',
-    packSize: '72 Packets / Box',
-    mrp: 720,
-    rate: 610,
-    stock: 450,
-    scheme: '10+1 FREE',
-  },
-  {
-    id: 'p2',
-    name: 'Britannia Good Day Butter (100g x 48 Pack)',
-    brand: 'Britannia',
-    category: 'Biscuits',
-    packSize: '48 Packets / Box',
-    mrp: 960,
-    rate: 815,
-    stock: 220,
-  },
-  {
-    id: 'p3',
-    name: 'Nestlé Maggi 2-Minute Noodles (70g x 96 Pack)',
-    brand: 'Nestlé',
-    category: 'Noodles',
-    packSize: '96 Packets / Case',
-    mrp: 1344,
-    rate: 1150,
-    stock: 310,
-    scheme: '12+1 FREE',
-  },
-  {
-    id: 'p4',
-    name: 'Fortune Refined Soyabean Oil (1L x 12 Pack)',
-    brand: 'Fortune',
-    category: 'Edible Oils',
-    packSize: '12 Pouches / Box',
-    mrp: 1680,
-    rate: 1475,
-    stock: 140,
-  },
-  {
-    id: 'p5',
-    name: 'Surf Excel Easy Wash Powder (500g x 36 Pack)',
-    brand: 'Hindustan Unilever',
-    category: 'Laundry',
-    packSize: '36 Packs / Box',
-    mrp: 2340,
-    rate: 1980,
-    stock: 95,
-    scheme: '5% OFF on 5+ Boxes',
-  },
-  {
-    id: 'p6',
-    name: 'Tata Salt Vacuum Evaporated (1kg x 24 Pack)',
-    brand: 'Tata Consumer',
-    category: 'Staples',
-    packSize: '24 Bags / Case',
-    mrp: 672,
-    rate: 580,
-    stock: 180,
-  },
-];
+import { useCart } from '../../context/CartContext';
+import { Product, CategorySummary } from '../../types';
+import { ProductService } from '../../services/productService';
+import { RetailerService } from '../../services/retailerService';
+import { ProductCard } from '../../components/catalogue/ProductCard';
+import { ProductSearchAndFilter } from '../../components/catalogue/ProductSearchAndFilter';
+import { CartSummaryBar } from '../../components/cart/CartSummaryBar';
 
 export const RetailerDashboard = () => {
   const { user } = useAuth();
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [cartCount, setCartCount] = useState(3);
-  const [addedItem, setAddedItem] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const { totalItemsCount, setIsCartDrawerOpen } = useCart();
 
-  const retailer = user?.retailer || {
-    shopName: 'Shri Ganesh Kirana Store',
-    creditLimit: 75000,
-    outstandingBalance: 14200,
-    city: 'Jabalpur',
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [inStockOnly, setInStockOnly] = useState(false);
+
+  // Retailer Profile / Credit
+  const [creditProfile, setCreditProfile] = useState<{
+    shopName: string;
+    creditLimit: number;
+    outstandingBalance: number;
+    availableCredit: number;
+    creditUtilization: number;
+    priceTier: 'STANDARD' | 'TIER_1' | 'TIER_2' | 'WHOLESALE';
+    salesman?: { id?: string; name: string; phone: string } | null;
+  }>({
+    shopName: user?.retailer?.shopName || 'Shri Ganesh Kirana & General Store',
+    creditLimit: user?.retailer?.creditLimit || 75000,
+    outstandingBalance: user?.retailer?.outstandingBalance || 14200,
+    availableCredit: (user?.retailer?.creditLimit || 75000) - (user?.retailer?.outstandingBalance || 14200),
+    creditUtilization: 19,
+    priceTier: user?.retailer?.priceTier || 'TIER_1',
+    salesman: user?.retailer?.salesman || { name: 'Vikram Sharma', phone: '9893000002' },
+  });
+
+  // Load initial data
+  const loadCatalogue = async () => {
+    setLoading(true);
+    try {
+      const [fetchedProducts, fetchedCategories, profile] = await Promise.all([
+        ProductService.getProducts({
+          search: searchTerm,
+          category: selectedCategory,
+          inStockOnly,
+          tier: creditProfile.priceTier,
+        }),
+        ProductService.getCategories(),
+        RetailerService.getMyProfile(),
+      ]);
+
+      setProducts(fetchedProducts);
+      setCategories(fetchedCategories);
+      if (profile) {
+        setCreditProfile((prev) => ({
+          ...prev,
+          ...profile,
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading catalogue:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const availableCredit = retailer.creditLimit - retailer.outstandingBalance;
-  const creditPercent = Math.round((retailer.outstandingBalance / retailer.creditLimit) * 100);
-
-  const handleAdd = (id: string) => {
-    const qty = quantities[id] || 1;
-    setCartCount((prev) => prev + qty);
-    setAddedItem(id);
-    setTimeout(() => setAddedItem(null), 1500);
-  };
-
-  const filtered = SAMPLE_PRODUCTS.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.brand.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    loadCatalogue();
+  }, [searchTerm, selectedCategory, inStockOnly, creditProfile.priceTier]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Top Banner: Retailer Welcome & Credit Khata Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Welcome & Shop Info */}
         <div className="lg:col-span-7 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20">
-                Verified Retailer
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 flex items-center gap-1">
+                <Store className="w-3 h-3" /> Verified FMCG Retailer
               </span>
-              <span className="text-xs text-slate-400">Jabalpur Beat #4</span>
+              <span className="text-xs text-slate-400">Jabalpur Beat #4 &bull; {creditProfile.priceTier} Pricing</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-              {retailer.shopName}
+              {creditProfile.shopName}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Owner: {user?.name} &bull; Sarafa Chowk, Lordganj, Jabalpur
+              Owner: {user?.name || 'Anil Patel'} &bull; Sarafa Chowk, Lordganj, Jabalpur
             </p>
           </div>
 
@@ -147,49 +111,58 @@ export const RetailerDashboard = () => {
               <span>Next Delivery: <strong>Tomorrow Morning (9:30 AM)</strong></span>
             </div>
             <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-sm flex items-center gap-1.5 hover:opacity-95 transition-all">
-                <ShoppingCart className="h-3.5 w-3.5" />
-                <span>View Cart ({cartCount})</span>
+              <button
+                type="button"
+                onClick={() => setIsCartDrawerOpen(true)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                <span>View Cart ({totalItemsCount})</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Khata / Credit Limit Widget (Matching the sleek mockup cards) */}
+        {/* Khata / Credit Limit Widget */}
         <div className="lg:col-span-5 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-sm">
+              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
                 <Wallet className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400">Distributor Credit Khata</p>
                 <p className="text-lg font-bold text-slate-900 dark:text-white">
-                  ₹{availableCredit.toLocaleString('en-IN')}{' '}
+                  ₹{creditProfile.availableCredit.toLocaleString('en-IN')}{' '}
                   <span className="text-xs font-normal text-slate-400">Available</span>
                 </p>
               </div>
             </div>
             <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-              Good Standing
+              Tier: {creditProfile.priceTier}
             </span>
           </div>
 
           <div className="mt-4 space-y-2">
             <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>Outstanding: ₹{retailer.outstandingBalance.toLocaleString('en-IN')}</span>
-              <span>Limit: ₹{retailer.creditLimit.toLocaleString('en-IN')}</span>
+              <span>Outstanding: ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}</span>
+              <span>Limit: ₹{creditProfile.creditLimit.toLocaleString('en-IN')}</span>
             </div>
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-[#202530] overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(creditPercent, 100)}%` }}
+                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(
+                    (creditProfile.outstandingBalance / creditProfile.creditLimit) * 100,
+                    100
+                  )}%`,
+                }}
               />
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex items-center justify-between text-[11px] text-slate-400">
-            <span>Payment Due Date: 10th of every month</span>
+            <span>Salesman: {creditProfile.salesman?.name} ({creditProfile.salesman?.phone})</span>
             <span className="text-emerald-500 font-semibold cursor-pointer hover:underline">
               Ledger &rarr;
             </span>
@@ -208,12 +181,18 @@ export const RetailerDashboard = () => {
               AI WhatsApp / Voice Order Capture
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Paste your handwritten list or WhatsApp message in Hindi or English (e.g. "Parle G 10 peti, Maggi 5 case").
+              Paste your handwritten list or WhatsApp message in Hindi or English (e.g. &ldquo;Parle G 10 peti, Maggi 5 case&rdquo;).
             </p>
           </div>
         </div>
 
-        <button className="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-[0_4px_14px_rgba(16,185,129,0.35)] flex items-center gap-2 hover:opacity-95 transition-all flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            alert('AI Order Pad will activate in Phase 4. You can order directly via the catalogue below right now!');
+          }}
+          className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2 hover:opacity-95 transition-all flex-shrink-0 cursor-pointer"
+        >
           <span>Open AI Order Pad</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
@@ -221,129 +200,68 @@ export const RetailerDashboard = () => {
 
       {/* Product Catalogue Section */}
       <div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              FMCG Product Catalogue
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span>FMCG Product Catalogue</span>
+              <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                Personalized Rates
+              </span>
             </h2>
-            <p className="text-xs text-slate-400">
-              Personalized distributor wholesale rates & active schemes for your shop
+            <p className="text-xs text-slate-400 mt-0.5">
+              Showing official distributor wholesale rates & active promotional schemes for your shop
             </p>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search biscuits, oil, soaps..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={loadCatalogue}
+            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Refresh catalogue"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
+
+        {/* Search, Filter Pills & In-stock toggle */}
+        <ProductSearchAndFilter
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          categories={categories}
+          inStockOnly={inStockOnly}
+          onInStockChange={setInStockOnly}
+          totalProductsCount={products.length}
+        />
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((product) => {
-            const isJustAdded = addedItem === product.id;
-            const currentQty = quantities[product.id] || 1;
-
-            return (
-              <div
-                key={product.id}
-                className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] hover:border-emerald-500/50 transition-all shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  {/* Top Badges */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-[#202530] px-2 py-0.5 rounded-md">
-                      {product.brand}
-                    </span>
-                    {product.scheme && (
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/20 flex items-center gap-1">
-                        <Percent className="h-3 w-3" />
-                        {product.scheme}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
-                    {product.name}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 mt-1">{product.packSize}</p>
-
-                  {/* Pricing Box */}
-                  <div className="mt-3 p-2.5 rounded-xl bg-slate-50 dark:bg-[#1C2028] flex items-baseline justify-between">
-                    <div>
-                      <span className="text-xs text-slate-400">Wholesale Rate:</span>
-                      <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                        ₹{product.rate}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[11px] text-slate-400">MRP:</span>
-                      <p className="text-xs line-through text-slate-400">₹{product.mrp}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Controls */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex items-center justify-between gap-2">
-                  <div className="flex items-center border border-slate-200 dark:border-[#262B35] rounded-lg overflow-hidden bg-white dark:bg-[#16181E]">
-                    <button
-                      onClick={() =>
-                        setQuantities((prev) => ({
-                          ...prev,
-                          [product.id]: Math.max(1, (prev[product.id] || 1) - 1),
-                        }))
-                      }
-                      className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-[#202530]"
-                    >
-                      -
-                    </button>
-                    <span className="px-2 text-xs font-semibold text-slate-900 dark:text-white">
-                      {currentQty}
-                    </span>
-                    <button
-                      onClick={() =>
-                        setQuantities((prev) => ({
-                          ...prev,
-                          [product.id]: (prev[product.id] || 1) + 1,
-                        }))
-                      }
-                      className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-[#202530]"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={() => handleAdd(product.id)}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                      isJustAdded
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-400 text-white hover:opacity-95 shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
-                    }`}
-                  >
-                    {isJustAdded ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        <span>Added!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add to Order</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {loading && products.length === 0 ? (
+          <div className="py-16 text-center text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-emerald-500" />
+            <p className="text-sm font-medium">Loading FMCG catalogue...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+            <TrendingUp className="w-10 h-10 mx-auto text-slate-400 mb-2 stroke-1" />
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              No products found
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Try adjusting your search terms or selecting a different category.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Floating Bottom Cart Bar */}
+      <CartSummaryBar />
     </div>
   );
 };

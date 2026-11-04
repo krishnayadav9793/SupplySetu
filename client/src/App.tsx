@@ -5,6 +5,8 @@ import { RetailerDashboard } from './pages/retailer/RetailerDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { SalesmanDashboard } from './pages/salesman/SalesmanDashboard';
 import { useAuth, AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { CartDrawer } from './components/cart/CartDrawer';
 
 function DashboardContent() {
   const { role } = useAuth();
@@ -28,6 +30,9 @@ function DashboardContent() {
           </main>
         </div>
       </div>
+
+      {/* Global Slide-over Cart Drawer */}
+      <CartDrawer />
     </div>
   );
 }
@@ -35,7 +40,9 @@ function DashboardContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <DashboardContent />
+      <CartProvider>
+        <DashboardContent />
+      </CartProvider>
     </AuthProvider>
   );
 }

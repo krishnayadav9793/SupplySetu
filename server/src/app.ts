@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { config } from './config';
 import authRoutes from './modules/auth/auth.routes';
+import productRoutes from './modules/products/products.routes';
+import retailerRoutes from './modules/retailers/retailers.routes';
 
 const app = express();
 
@@ -17,6 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/retailers', retailerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {

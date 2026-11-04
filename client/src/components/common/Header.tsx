@@ -1,6 +1,7 @@
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, ShoppingBag } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import { Role } from '../../types';
 
 interface HeaderProps {
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header = ({ setCurrentTab }: HeaderProps) => {
   const { user, role, switchRole } = useAuth();
+  const { totalUniqueItems, setIsCartDrawerOpen } = useCart();
 
   return (
     <header className="h-16 px-4 sm:px-6 border-b border-slate-100 dark:border-[#1E222A] flex items-center justify-between gap-4 bg-white dark:bg-[#121418] select-none">
@@ -66,6 +68,20 @@ export const Header = ({ setCurrentTab }: HeaderProps) => {
             );
           })}
         </div>
+
+        {/* Cart Toggle Button */}
+        <button
+          onClick={() => setIsCartDrawerOpen(true)}
+          className="relative h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          title="Open Cart"
+        >
+          <ShoppingBag className="h-4 w-4" />
+          {totalUniqueItems > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#121418]">
+              {totalUniqueItems}
+            </span>
+          )}
+        </button>
 
         {/* Notification Bell */}
         <button
