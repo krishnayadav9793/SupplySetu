@@ -32,6 +32,7 @@ export const AdminDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -88,6 +89,40 @@ export const AdminDashboard = () => {
       loadData();
     } catch (err) {
       alert('Failed to reject order');
+    }
+  };
+
+  const handleExportTallyCsv = async () => {
+    setIsExporting(true);
+    try {
+      const token = localStorage.getItem('supplysetu-auth-token');
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBase}/exports/tally.csv`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate Tally CSV export');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const today = new Date().toISOString().split('T')[0];
+      a.download = `TALLY_ORDERS_${today}_BATCH.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setActionSuccessMessage('Tally ERP compatible CSV downloaded successfully!');
+      setTimeout(() => setActionSuccessMessage(null), 4000);
+    } catch (err: any) {
+      console.error('Tally export error:', err);
+      alert('Could not download Tally export from server. Please verify backend is running.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -167,13 +202,12 @@ export const AdminDashboard = () => {
           <div className="mt-1 flex items-baseline justify-between">
             <p className="text-2xl font-bold text-emerald-500">Ready</p>
             <button
-              onClick={() => {
-                alert(`Exporting ${metrics.approvedOrders} approved orders to Tally-compatible XML/CSV format.`);
-              }}
-              className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+              onClick={handleExportTallyCsv}
+              disabled={isExporting}
+              className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm transition-all cursor-pointer"
             >
-              <FileSpreadsheet className="h-3.5 w-3.5" />
-              <span>Export CSV</span>
+              <FileSpreadsheet className={`h-3.5 w-3.5 ${isExporting ? 'animate-spin' : ''}`} />
+              <span>{isExporting ? 'Generating...' : 'Export CSV'}</span>
             </button>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">{metrics.approvedOrders} Approved batches</p>
