@@ -4,6 +4,7 @@ import { config } from './config';
 import authRoutes from './modules/auth/auth.routes';
 import productRoutes from './modules/products/products.routes';
 import retailerRoutes from './modules/retailers/retailers.routes';
+import aiRoutes from './modules/ai/ai.routes';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/retailers', retailerRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
