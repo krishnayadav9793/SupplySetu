@@ -7,10 +7,25 @@ import { SalesmanDashboard } from './pages/salesman/SalesmanDashboard';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { CartDrawer } from './components/cart/CartDrawer';
+import { AuthPage } from './pages/auth/AuthPage';
 
 function DashboardContent() {
-  const { role } = useAuth();
+  const { user, role, isLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('home');
+
+  if (isLoading && !user) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#F4F6F9] dark:bg-[#0B0D11] text-slate-500">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mb-3" />
+        <p className="text-xs font-semibold">Connecting to SupplySetu Hub...</p>
+      </div>
+    );
+  }
+
+  // If not authenticated, render Login / Register UI
+  if (!user) {
+    return <AuthPage />;
+  }
 
   return (
     <div className="h-screen w-screen bg-[#F4F6F9] dark:bg-[#0C0E12] text-slate-800 dark:text-[#E2E8F0] font-sans transition-colors duration-200 flex flex-col overflow-hidden">

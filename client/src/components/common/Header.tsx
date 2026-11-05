@@ -1,4 +1,4 @@
-import { Search, Bell, ShoppingBag } from 'lucide-react';
+import { Search, Bell, ShoppingBag, LogOut } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ setCurrentTab }: HeaderProps) => {
-  const { user, role, switchRole } = useAuth();
+  const { user, role, switchRole, logout } = useAuth();
   const { totalUniqueItems, setIsCartDrawerOpen } = useCart();
 
   return (
@@ -119,6 +119,15 @@ export const Header = ({ setCurrentTab }: HeaderProps) => {
                 : 'Kirana Store Merchant'}
             </p>
           </div>
+
+          {/* Sign Out / Exit Session */}
+          <button
+            onClick={logout}
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+            title="Sign Out / Switch Account"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Dark/Light Theme Toggle */}
