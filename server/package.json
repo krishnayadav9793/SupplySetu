@@ -9,7 +9,8 @@
     "start": "node dist/app.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "test": "tsx src/tests/suite.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
