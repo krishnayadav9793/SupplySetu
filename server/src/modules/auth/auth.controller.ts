@@ -3,6 +3,40 @@ import { AuthService } from './auth.service';
 import { AuthenticatedRequest } from '../../middleware/auth';
 
 export class AuthController {
+  static async register(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { phone, password, name, role, shopName, address, city, state, pincode, gstNumber } = req.body;
+      if (!phone || !name) {
+        res.status(400).json({ success: false, message: 'Phone number and name are required' });
+        return;
+      }
+
+      const result = await AuthService.register({
+        phone,
+        password,
+        name,
+        role,
+        shopName,
+        address,
+        city,
+        state,
+        pincode,
+        gstNumber,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Account registered successfully',
+        data: result,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Registration failed',
+      });
+    }
+  }
+
   static async login(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { phone, password } = req.body;
