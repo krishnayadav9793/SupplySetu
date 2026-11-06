@@ -113,7 +113,12 @@ export class RetailersService {
     }
 
     if (salesmanId) {
-      where.salesmanId = salesmanId;
+      // If salesman has specific retailers assigned, filter by them;
+      // otherwise show all active retailers in territory so salesman can visit any beat shop
+      const assignedCount = await prisma.retailer.count({ where: { salesmanId, isActive: true } });
+      if (assignedCount > 0) {
+        where.salesmanId = salesmanId;
+      }
     }
 
     const [retailers, totalCount] = await Promise.all([
