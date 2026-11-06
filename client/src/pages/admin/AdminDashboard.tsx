@@ -12,11 +12,29 @@ import {
   Search,
   Check,
   Package,
+  UserPlus,
+  Users,
+  Phone,
+  ShieldCheck,
+  Lock,
+  Download,
+  Store,
+  Layers,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
-import { Order, OrderDeskMetrics } from '../../types';
+import { Order, OrderDeskMetrics, RetailerProfile } from '../../types';
 import { OrderService } from '../../services/orderService';
+import { SalesmanService, SalesmanRecord } from '../../services/salesmanService';
+import { RetailerService } from '../../services/retailerService';
 
-export const AdminDashboard = () => {
+interface AdminDashboardProps {
+  currentTab?: string;
+  setCurrentTab?: (tab: string) => void;
+}
+
+export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDashboardProps) => {
+  // Order desk state
   const [activeTab, setActiveTab] = useState<'pending' | 'hold' | 'approved' | 'all'>('pending');
   const [orders, setOrders] = useState<Order[]>([]);
   const [metrics, setMetrics] = useState<OrderDeskMetrics>({
@@ -33,6 +51,33 @@ export const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Staff & Retailers state
+  const [salesmen, setSalesmen] = useState<SalesmanRecord[]>([]);
+  const [retailers, setRetailers] = useState<RetailerProfile[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+  const [showAddSalesmanModal, setShowAddSalesmanModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedSalesmanForAssign, setSelectedSalesmanForAssign] = useState<SalesmanRecord | null>(null);
+  const [assignedShopIdsForModal, setAssignedShopIdsForModal] = useState<string[]>([]);
+
+  // Add Salesman Form state
+  const [salesmanName, setSalesmanName] = useState('');
+  const [salesmanPhone, setSalesmanPhone] = useState('');
+  const [salesmanPassword, setSalesmanPassword] = useState('password123');
+  const [selectedInitialShops, setSelectedInitialShops] = useState<string[]>([]);
+  const [isSubmittingSalesman, setIsSubmittingSalesman] = useState(false);
+  const [salesmanFormError, setSalesmanFormError] = useState<string | null>(null);
+  const [createdSalesmanCreds, setCreatedSalesmanCreds] = useState<{
+    name: string;
+    phone: string;
+    password: string;
+    assignedCount: number;
+  } | null>(null);
+
+  // Kirana search & filters
+  const [kiranaSearchQuery, setKiranaSearchQuery] = useState('');
+  const [kiranaTierFilter, setKiranaTierFilter] = useState('ALL');
 
   const loadData = async () => {
     setLoading(true);
@@ -53,8 +98,25 @@ export const AdminDashboard = () => {
     }
   };
 
+  const loadStaffData = async () => {
+    setLoadingStaff(true);
+    try {
+      const [fetchedSalesmen, fetchedRetailers] = await Promise.all([
+        SalesmanService.listSalesmen(),
+        RetailerService.getAllRetailers(),
+      ]);
+      setSalesmen(fetchedSalesmen);
+      setRetailers(fetchedRetailers);
+    } catch (err) {
+      console.error('Error loading staff & retailer data:', err);
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadStaffData();
   }, []);
 
   const handleApprove = async (orderId: string) => {
@@ -126,6 +188,87 @@ export const AdminDashboard = () => {
     }
   };
 
+  // Add Beat Salesman Handler
+  const handleAddSalesmanSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSalesmanFormError(null);
+
+    if (!salesmanName.trim()) {
+      setSalesmanFormError('Please enter salesman full name');
+      return;
+    }
+    const cleanPhone = salesmanPhone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      setSalesmanFormError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    setIsSubmittingSalesman(true);
+    try {
+      const res = await SalesmanService.createSalesman({
+        name: salesmanName.trim(),
+        phone: cleanPhone,
+        password: salesmanPassword || 'password123',
+        assignedRetailerIds: selectedInitialShops,
+      });
+
+      if (res.success) {
+        setCreatedSalesmanCreds({
+          name: salesmanName.trim(),
+          phone: cleanPhone,
+          password: salesmanPassword || 'password123',
+          assignedCount: selectedInitialShops.length,
+        });
+        // Reset inputs
+        setSalesmanName('');
+        setSalesmanPhone('');
+        setSalesmanPassword('password123');
+        setSelectedInitialShops([]);
+        // Reload salesmen & retailers
+        loadStaffData();
+      } else {
+        setSalesmanFormError(res.message || 'Failed to create salesman');
+      }
+    } catch (err: any) {
+      setSalesmanFormError(err.message || 'Error occurred while creating salesman');
+    } finally {
+      setIsSubmittingSalesman(false);
+    }
+  };
+
+  // Assign Shops Modal Open
+  const openAssignModal = (salesman: SalesmanRecord) => {
+    setSelectedSalesmanForAssign(salesman);
+    // Find all retailers currently assigned to this salesman
+    const currentAssigned = retailers
+      .filter((r) => r.salesman?.id === salesman.id || salesman.shops?.some((s) => s.id === r.id))
+      .map((r) => r.id as string);
+    setAssignedShopIdsForModal(currentAssigned);
+    setShowAssignModal(true);
+  };
+
+  // Save Shop Assignment
+  const handleSaveShopAssignment = async () => {
+    if (!selectedSalesmanForAssign) return;
+
+    try {
+      const success = await SalesmanService.assignShops(
+        selectedSalesmanForAssign.id,
+        assignedShopIdsForModal
+      );
+      if (success) {
+        setActionSuccessMessage(`Beat shops updated for ${selectedSalesmanForAssign.name}!`);
+        setTimeout(() => setActionSuccessMessage(null), 3500);
+        setShowAssignModal(false);
+        loadStaffData();
+      } else {
+        alert('Failed to update shop assignments');
+      }
+    } catch (err) {
+      alert('Error updating shop assignments');
+    }
+  };
+
   // Filter orders by tab
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
@@ -141,6 +284,775 @@ export const AdminDashboard = () => {
     return true; // 'all'
   });
 
+  // Filter kiranas for Kirana Network tab
+  const filteredRetailers = retailers.filter((r) => {
+    const matchesSearch =
+      r.shopName.toLowerCase().includes(kiranaSearchQuery.toLowerCase()) ||
+      r.ownerName.toLowerCase().includes(kiranaSearchQuery.toLowerCase()) ||
+      (r.phone && r.phone.includes(kiranaSearchQuery)) ||
+      r.city.toLowerCase().includes(kiranaSearchQuery.toLowerCase());
+
+    const matchesTier = kiranaTierFilter === 'ALL' || r.priceTier === kiranaTierFilter;
+
+    return matchesSearch && matchesTier;
+  });
+
+  const totalCreditLimit = retailers.reduce((s, r) => s + (r.creditLimit || 0), 0);
+  const totalOutstanding = retailers.reduce((s, r) => s + (r.outstandingBalance || 0), 0);
+
+  // ==========================================
+  // TAB 1: KIRANA NETWORK & FIELD SALES FORCE
+  // ==========================================
+  if (currentTab === 'retailers') {
+    return (
+      <div className="space-y-6 pb-8">
+        {/* Action Notification Banner */}
+        {actionSuccessMessage && (
+          <div className="p-3 bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center justify-between shadow-md">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{actionSuccessMessage}</span>
+            </div>
+            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+              &times;
+            </button>
+          </div>
+        )}
+
+        {/* Header with Title and Add Salesman Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-6 h-6 text-emerald-500" />
+              <span>Field Sales Force & Kirana Network</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Manage your on-ground beat salesmen, assigned shop beats, and retailer credit khata in Jabalpur territory.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setCreatedSalesmanCreds(null);
+                setSalesmanFormError(null);
+                setShowAddSalesmanModal(true);
+              }}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Add Beat Salesman</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Territory Overview Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-400">Beat Salesmen</p>
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            </div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {salesmen.length} Active Staff
+            </p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+              All equipped with offline sync app
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-400">Kirana Retailer Network</p>
+              <Store className="w-4 h-4 text-blue-500" />
+            </div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {retailers.length} Verified Stores
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Jabalpur FMCG Hub</p>
+          </div>
+
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-400">Total Credit Line (Khata)</p>
+              <Wallet className="w-4 h-4 text-purple-500" />
+            </div>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              ₹{(totalCreditLimit / 100000).toFixed(1)} Lakhs
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Approved 7-day credit limits</p>
+          </div>
+
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-400">Market Outstanding</p>
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            </div>
+            <p className="text-2xl font-bold text-amber-500 mt-1">
+              ₹{(totalOutstanding / 100000).toFixed(1)} Lakhs
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              {totalCreditLimit > 0 ? Math.round((totalOutstanding / totalCreditLimit) * 100) : 0}% aggregate utilization
+            </p>
+          </div>
+        </div>
+
+        {/* SECTION 1: Active Beat Salesmen Team */}
+        <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-[#222631] pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Active Beat Salesmen Team</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {salesmen.length} on roster
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                Field salesmen who log into the mobile app to take offline orders at kirana counters.
+              </p>
+            </div>
+            <button
+              onClick={loadStaffData}
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors"
+              title="Refresh Salesmen List"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingStaff ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {salesmen.map((salesman) => (
+              <div
+                key={salesman.id}
+                className="p-4 rounded-xl border border-slate-200/70 dark:border-[#222631] bg-slate-50/50 dark:bg-[#151922] hover:border-emerald-500/50 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>{salesman.name}</span>
+                        {salesman.isActive && (
+                          <span className="h-2 w-2 rounded-full bg-emerald-500" title="Active"></span>
+                        )}
+                      </h4>
+                      <p className="text-xs font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3 text-slate-400" />
+                        <span>+91 {salesman.phone}</span>
+                      </p>
+                    </div>
+
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                      SALESMAN
+                    </span>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-[10px] text-slate-400">Assigned Beat Shops</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        {salesman.assignedShopsCount || (salesman.shops ? salesman.shops.length : 0)} Kiranas
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400">Orders Punched</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        {salesman.ordersCount || 0} Orders
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Credentials Hint Card */}
+                  <div className="mt-3 p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-500/20 text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-emerald-500" />
+                      <span>Password: <strong className="font-mono text-emerald-700 dark:text-emerald-400">password123</strong></span>
+                    </div>
+                    <span className="text-[10px] text-slate-400">Default</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-2 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => openAssignModal(salesman)}
+                    className="w-full py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Manage Assigned Shops</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION 2: Kirana Retailer Network Table */}
+        <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-[#222631] pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Kirana Retailer Network ({filteredRetailers.length})
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                Verified stores with assigned beat salesmen, price tiers, and khata credit balances.
+              </p>
+            </div>
+
+            {/* Search & Tier Filter */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={kiranaSearchQuery}
+                  onChange={(e) => setKiranaSearchQuery(e.target.value)}
+                  placeholder="Search shop, owner, phone..."
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden w-52"
+                />
+              </div>
+
+              <select
+                value={kiranaTierFilter}
+                onChange={(e) => setKiranaTierFilter(e.target.value)}
+                className="px-2.5 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden"
+              >
+                <option value="ALL">All Price Tiers</option>
+                <option value="TIER_1">Tier 1 (Wholesale)</option>
+                <option value="TIER_2">Tier 2 (Semi-Wholesale)</option>
+                <option value="STANDARD">Standard</option>
+                <option value="WHOLESALE">Wholesale</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-semibold">
+                  <th className="py-2.5 px-3">Kirana Shop</th>
+                  <th className="py-2.5 px-3">Owner & Contact</th>
+                  <th className="py-2.5 px-3">Location</th>
+                  <th className="py-2.5 px-3">Assigned Salesman</th>
+                  <th className="py-2.5 px-3">Khata (Credit / Out)</th>
+                  <th className="py-2.5 px-3">Price Tier</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {filteredRetailers.map((r) => {
+                  const utilization =
+                    r.creditLimit > 0
+                      ? Math.round((r.outstandingBalance / r.creditLimit) * 100)
+                      : 0;
+
+                  return (
+                    <tr key={r.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors">
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            <Store className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">{r.shopName}</p>
+                            {r.gstNumber && (
+                              <p className="text-[10px] font-mono text-slate-400">GSTIN: {r.gstNumber}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3 px-3">
+                        <p className="font-medium text-slate-800 dark:text-slate-200">{r.ownerName}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">+91 {r.phone || '9893000000'}</p>
+                      </td>
+
+                      <td className="py-3 px-3">
+                        <p className="text-slate-700 dark:text-slate-300">{r.city}, MP</p>
+                        <p className="text-[10px] text-slate-400 truncate max-w-xs">{r.address}</p>
+                      </td>
+
+                      <td className="py-3 px-3">
+                        {r.salesman ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">{r.salesman.name}</p>
+                              <p className="text-[10px] text-slate-400 font-mono">{r.salesman.phone}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            Unassigned
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 min-w-[150px]">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            ₹{r.outstandingBalance?.toLocaleString('en-IN') || 0}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            / ₹{r.creditLimit?.toLocaleString('en-IN') || 0}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              utilization > 90
+                                ? 'bg-rose-500'
+                                : utilization > 70
+                                ? 'bg-amber-500'
+                                : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.min(100, utilization)}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{utilization}% utilized</p>
+                      </td>
+
+                      <td className="py-3 px-3">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                          {r.priceTier || 'TIER_1'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* ========================================== */}
+        {/* MODAL 1: ADD BEAT SALESMAN                 */}
+        {/* ========================================== */}
+        {showAddSalesmanModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+            <div className="bg-white dark:bg-[#16181E] border border-slate-200 dark:border-[#222631] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+              {createdSalesmanCreds ? (
+                /* Success State */
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-emerald-500 font-bold text-base">
+                    <CheckCircle2 className="w-6 h-6" />
+                    <span>Beat Salesman Created Successfully!</span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    The salesman account has been provisioned in the PostgreSQL database and assigned {createdSalesmanCreds.assignedCount} beat shops.
+                  </p>
+
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700">
+                      <span className="text-slate-400">Salesman Name:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{createdSalesmanCreds.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700">
+                      <span className="text-slate-400">Login Mobile:</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">+91 {createdSalesmanCreds.phone}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-slate-400">Default Password:</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{createdSalesmanCreds.password}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>
+                      The salesman can now immediately log in from the login page using the phone number and password above.
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowAddSalesmanModal(false);
+                      setCreatedSalesmanCreds(null);
+                    }}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Done & Close
+                  </button>
+                </div>
+              ) : (
+                /* Form State */
+                <form onSubmit={handleAddSalesmanSubmit} className="space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#222631]">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="w-5 h-5 text-emerald-500" />
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Add New Beat Salesman
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSalesmanModal(false)}
+                      className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {salesmanFormError && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-500/20 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      <span>{salesmanFormError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Salesman Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={salesmanName}
+                        onChange={(e) => setSalesmanName(e.target.value)}
+                        placeholder="e.g. Rohan Verma"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        10-Digit Mobile Phone (Login Username) *
+                      </label>
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-mono">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          maxLength={10}
+                          value={salesmanPhone}
+                          onChange={(e) => setSalesmanPhone(e.target.value.replace(/\D/g, ''))}
+                          placeholder="9893000004"
+                          className="w-full px-3 py-2 rounded-r-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-hidden focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Initial Password
+                      </label>
+                      <input
+                        type="text"
+                        value={salesmanPassword}
+                        onChange={(e) => setSalesmanPassword(e.target.value)}
+                        placeholder="password123"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-hidden focus:border-emerald-500"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Defaults to <code className="text-emerald-500">password123</code>. The salesman can change this later.
+                      </p>
+                    </div>
+
+                    {/* Assign Initial Beat Shops */}
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Assign Initial Kirana Beat Shops ({selectedInitialShops.length} selected)
+                      </label>
+                      <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1C2028]">
+                        {retailers.length === 0 ? (
+                          <p className="text-slate-400 text-[11px] p-2">No retailers found.</p>
+                        ) : (
+                          retailers.map((r) => {
+                            const isChecked = selectedInitialShops.includes(r.id as string);
+                            return (
+                              <label
+                                key={r.id}
+                                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedInitialShops((prev) => [...prev, r.id as string]);
+                                    } else {
+                                      setSelectedInitialShops((prev) =>
+                                        prev.filter((id) => id !== r.id)
+                                      );
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <div className="flex-1 truncate">
+                                  <span className="font-semibold text-slate-900 dark:text-white">
+                                    {r.shopName}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 ml-1.5">
+                                    ({r.ownerName} &bull; {r.city})
+                                  </span>
+                                </div>
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-[#222631] flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSalesmanModal(false)}
+                      className="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingSalesman}
+                      className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>{isSubmittingSalesman ? 'Provisioning...' : 'Add Salesman'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================== */}
+        {/* MODAL 2: MANAGE ASSIGNED SHOPS             */}
+        {/* ========================================== */}
+        {showAssignModal && selectedSalesmanForAssign && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+            <div className="bg-white dark:bg-[#16181E] border border-slate-200 dark:border-[#222631] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#222631]">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Assign Beat Shops to {selectedSalesmanForAssign.name}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Select the Kiranas this salesman will visit on their daily beat.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAssignModal(false)}
+                  className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs text-slate-500">
+                  <span>Selected Shops: {assignedShopIdsForModal.length} of {retailers.length}</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAssignedShopIdsForModal(retailers.map((r) => r.id as string))}
+                      className="text-emerald-600 hover:underline text-[11px]"
+                    >
+                      Select All
+                    </button>
+                    <span>&bull;</span>
+                    <button
+                      type="button"
+                      onClick={() => setAssignedShopIdsForModal([])}
+                      className="text-rose-500 hover:underline text-[11px]"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-72 overflow-y-auto space-y-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1C2028]">
+                  {retailers.map((r) => {
+                    const isChecked = assignedShopIdsForModal.includes(r.id as string);
+                    return (
+                      <label
+                        key={r.id}
+                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-xs"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAssignedShopIdsForModal((prev) => [...prev, r.id as string]);
+                            } else {
+                              setAssignedShopIdsForModal((prev) =>
+                                prev.filter((id) => id !== r.id)
+                              );
+                            }
+                          }}
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <div className="flex-1 truncate">
+                          <p className="font-semibold text-slate-900 dark:text-white">{r.shopName}</p>
+                          <p className="text-[10px] text-slate-400">
+                            {r.ownerName} &bull; {r.address}, {r.city}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-[#222631] flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAssignModal(false)}
+                  className="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveShopAssignment}
+                  className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+                >
+                  Save Shop Assignment
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==========================================
+  // TAB 2: TALLY ERP BATCH EXPORT CENTER
+  // ==========================================
+  if (currentTab === 'export') {
+    return (
+      <div className="space-y-6 pb-8">
+        {/* Action Notification Banner */}
+        {actionSuccessMessage && (
+          <div className="p-3 bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center justify-between shadow-md">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{actionSuccessMessage}</span>
+            </div>
+            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+              &times;
+            </button>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <FileSpreadsheet className="w-6 h-6 text-emerald-500" />
+              <span>Tally ERP 9 / Tally Prime Batch Export Center</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Generate standardized RFC-4180 CSV batch vouchers for direct import into Tally ERP without double data-entry.
+            </p>
+          </div>
+
+          <button
+            onClick={handleExportTallyCsv}
+            disabled={isExporting}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+            <span>{isExporting ? 'Generating Batch...' : 'Download Tally Batch CSV'}</span>
+          </button>
+        </div>
+
+        {/* Overview Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <p className="text-xs font-semibold text-slate-400">Approved Orders Ready</p>
+            <p className="text-2xl font-bold text-emerald-500 mt-1">{metrics.approvedOrders} Orders</p>
+            <p className="text-[11px] text-slate-400 mt-1">Verified with valid GSTIN & ledger</p>
+          </div>
+
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <p className="text-xs font-semibold text-slate-400">Total Approved GMV</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              ₹{metrics.totalGmv.toLocaleString('en-IN')}
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Ready for voucher journal entry</p>
+          </div>
+
+          <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <p className="text-xs font-semibold text-slate-400">Export Spec Version</p>
+            <p className="text-2xl font-bold text-purple-500 mt-1">RFC-4180</p>
+            <p className="text-[11px] text-slate-400 mt-1">UTF-8 with BOM for Excel & Tally</p>
+          </div>
+        </div>
+
+        {/* Export Spec Details */}
+        <div className="bg-white dark:bg-[#16181E] rounded-2xl p-6 border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Tally Ledger Schema & Field Mapping
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            The exported file is formatted with exact headers required by standard Tally XML/CSV import utilities:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200/70 dark:border-slate-800">
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold block mb-1">
+                Voucher Number
+              </span>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                Unique SupplySetu order reference (e.g. <code className="text-slate-700 dark:text-slate-300">ORD-2026-XXXX</code>) mapped to Sales Voucher.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200/70 dark:border-slate-800">
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold block mb-1">
+                Party Ledger Name
+              </span>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                Mapped to Sundry Debtors using the Kirana shop name and verified GSTIN.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200/70 dark:border-slate-800">
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold block mb-1">
+                Tax Breakdown
+              </span>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                Itemized CGST, SGST (or IGST for interstate) amounts calculated per HSN code.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200/70 dark:border-slate-800">
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold block mb-1">
+                Sales Ledger
+              </span>
+              <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+                Defaults to "Sales - FMCG Local 18% / 12% / 5%" based on the product GST slabs.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 dark:border-[#222631] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Need automated daily sync directly to Tally Prime XML port?
+            </div>
+            <button
+              onClick={handleExportTallyCsv}
+              disabled={isExporting}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+              <span>Export Today's Approved Batch (.CSV)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // DEFAULT TAB: ORDER DESK & VERIFICATION
+  // ==========================================
   return (
     <div className="space-y-6 pb-8">
       {/* Action Notification Banner */}
@@ -169,7 +1081,7 @@ export const AdminDashboard = () => {
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            {metrics.activeSalesmenCount} Beat Salesmen in Field
+            {salesmen.length > 0 ? salesmen.length : metrics.activeSalesmenCount} Beat Salesmen in Field
           </p>
         </div>
 
@@ -216,7 +1128,6 @@ export const AdminDashboard = () => {
 
       {/* Main Order Desk Workspace: 12 Cols Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        
         {/* Left Column: Distributor Ledger / Beat Outstanding (3 Cols) */}
         <div className="lg:col-span-3 flex flex-col gap-4">
           <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs">
@@ -235,13 +1146,25 @@ export const AdminDashboard = () => {
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex flex-col gap-2">
               <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>Total Active Retailers:</span>
-                <span className="font-bold text-slate-900 dark:text-white">1,820 Shops</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {retailers.length > 0 ? `${retailers.length} Shops` : '1,820 Shops'}
+                </span>
               </div>
               <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>Jabalpur FMCG Hub:</span>
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">Operational</span>
               </div>
             </div>
+
+            {setCurrentTab && (
+              <button
+                onClick={() => setCurrentTab('retailers')}
+                className="mt-3 w-full py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span>Manage Kirana Network</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           {/* Beat Highlights */}
@@ -602,7 +1525,6 @@ export const AdminDashboard = () => {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
