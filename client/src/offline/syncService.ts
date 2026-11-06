@@ -71,6 +71,19 @@ class SyncServiceManager {
   }
 
   /**
+   * Retrieve cached retailers from Dexie IndexedDB
+   */
+  public async getCachedRetailers(): Promise<RetailerProfile[]> {
+    try {
+      const items = await db.cachedRetailers.toArray();
+      if (items.length > 0) return items;
+    } catch (err) {
+      console.warn('Error reading cached retailers:', err);
+    }
+    return [];
+  }
+
+  /**
    * Queue an order into IndexedDB when offline
    */
   public async queueOfflineOrder(data: {

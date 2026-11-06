@@ -18,7 +18,8 @@ import { useAuth } from '../../context/AuthContext';
 import { SyncService } from '../../offline/syncService';
 import { OfflineOrderRecord } from '../../offline/db';
 import { ProductService } from '../../services/productService';
-import { Product } from '../../types';
+import { RetailerService } from '../../services/retailerService';
+import { Product, RetailerProfile } from '../../types';
 
 interface BeatShop {
   id: string;
@@ -30,54 +31,6 @@ interface BeatShop {
   outstanding: number;
 }
 
-const BEAT_SHOPS: BeatShop[] = [
-  {
-    id: 's1',
-    name: 'Shri Ganesh Kirana Store',
-    owner: 'Anil Patel',
-    address: 'Shop 14, Sarafa Chowk, Lordganj',
-    status: 'visited',
-    lastOrder: '₹11,850 (10 mins ago)',
-    outstanding: 14200,
-  },
-  {
-    id: 's2',
-    name: 'Mahalaxmi Provision Store',
-    owner: 'Dinesh Agarwal',
-    address: 'Near Old Bus Stand, Lordganj',
-    status: 'pending',
-    lastOrder: '₹8,400 (3 days ago)',
-    outstanding: 38200,
-  },
-  {
-    id: 's3',
-    name: 'Gupta Daily Needs & Dairy',
-    owner: 'Sunil Gupta',
-    address: '42 Subhash Marg, Lordganj',
-    status: 'pending',
-    lastOrder: '₹14,200 (Yesterday)',
-    outstanding: 6500,
-  },
-  {
-    id: 's4',
-    name: 'Khandelwal Super Mart',
-    owner: 'Mukesh Khandelwal',
-    address: 'Main Market, Sarafa Bazaar',
-    status: 'pending',
-    lastOrder: '₹22,100 (5 days ago)',
-    outstanding: 18900,
-  },
-  {
-    id: 's5',
-    name: 'Vijay General Store',
-    owner: 'Vijay Sahu',
-    address: 'Lane 3, Bada Fuhara',
-    status: 'pending',
-    lastOrder: '₹5,600 (1 week ago)',
-    outstanding: 4200,
-  },
-];
-
 export const SalesmanDashboard = () => {
   const { user } = useAuth();
   const [isOnline, setIsOnline] = useState<boolean>(SyncService.isOnline());
@@ -87,8 +40,10 @@ export const SalesmanDashboard = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
 
-  // Products cache
+  // Beat Shops & Products cache (Dexie + Real DB)
+  const [beatShops, setBeatShops] = useState<BeatShop[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loadingShops, setLoadingShops] = useState(true);
 
   // Modals
   const [showPunchModal, setShowPunchModal] = useState(false);
@@ -101,6 +56,18 @@ export const SalesmanDashboard = () => {
   const [productSearch, setProductSearch] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
 
+  const mapRetailersToBeatShops = (retailers: RetailerProfile[]): BeatShop[] => {
+    return retailers.map((r, idx) => ({
+      id: r.id || `ret-${idx}`,
+      name: r.shopName,
+      owner: r.ownerName,
+      address: r.address ? `${r.address}, ${r.city}` : `${r.city || 'Jabalpur'}`,
+      status: idx === 0 ? 'visited' : 'pending',
+      outstanding: r.outstandingBalance || 0,
+      lastOrder: r.outstandingBalance > 0 ? `₹${r.outstandingBalance.toLocaleString('en-IN')} (Khata)` : 'Cleared',
+    }));
+  };
+
   // Subscribe to offline sync updates
   useEffect(() => {
     const unsubscribe = SyncService.subscribe((count, online) => {
@@ -108,18 +75,39 @@ export const SalesmanDashboard = () => {
       setIsOnline(online);
     });
 
-    // Initial catalogue loading & caching to Dexie
+    // Initial catalogue & retailer loading with Dexie IndexedDB caching
     const initData = async () => {
+      setLoadingShops(true);
       try {
-        const prodList = await ProductService.getProducts();
+        const [prodList, retailerList] = await Promise.all([
+          ProductService.getProducts(),
+          RetailerService.getAllRetailers(),
+        ]);
+
         setProducts(prodList);
-        await SyncService.cacheCatalogueData(prodList, []);
+
+        if (retailerList && retailerList.length > 0) {
+          const shops = mapRetailersToBeatShops(retailerList);
+          setBeatShops(shops);
+          // Cache both into local Dexie IndexedDB for full offline resilience
+          await SyncService.cacheCatalogueData(prodList, retailerList);
+        }
       } catch (err) {
-        // Fallback to cached items
-        const cached = await SyncService.getCachedProducts();
-        setProducts(cached);
+        console.warn('Network offline or backend unreachable, loading from Dexie IndexedDB:', err);
+        const [cachedProds, cachedRetailers] = await Promise.all([
+          SyncService.getCachedProducts(),
+          SyncService.getCachedRetailers(),
+        ]);
+
+        setProducts(cachedProds);
+        if (cachedRetailers && cachedRetailers.length > 0) {
+          setBeatShops(mapRetailersToBeatShops(cachedRetailers));
+        }
+      } finally {
+        setLoadingShops(false);
       }
     };
+
     initData();
 
     return () => unsubscribe();
@@ -159,7 +147,7 @@ export const SalesmanDashboard = () => {
   };
 
   const handleOpenPunchModal = (shop?: BeatShop) => {
-    setSelectedShop(shop || BEAT_SHOPS[0]);
+    setSelectedShop(shop || beatShops[0] || null);
     setOrderItems({});
     setOrderNotes('');
     setShowPunchModal(true);
@@ -258,10 +246,11 @@ export const SalesmanDashboard = () => {
     }
   };
 
-  const visitedCount = BEAT_SHOPS.filter((s) => s.status === 'visited').length;
-  const progressPercent = Math.round((visitedCount / BEAT_SHOPS.length) * 100);
+  const visitedCount = beatShops.filter((s) => s.status === 'visited').length;
+  const progressPercent = beatShops.length > 0 ? Math.round((visitedCount / beatShops.length) * 100) : 0;
+  const totalOutstanding = beatShops.reduce((sum, s) => sum + s.outstanding, 0);
 
-  const filteredShops = BEAT_SHOPS.filter(
+  const filteredShops = beatShops.filter(
     (s) =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.owner.toLowerCase().includes(search.toLowerCase())
@@ -387,7 +376,7 @@ export const SalesmanDashboard = () => {
           <p className="text-xs font-semibold text-slate-400">Beat Coverage</p>
           <div className="mt-1 flex items-baseline justify-between">
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              {visitedCount} / {BEAT_SHOPS.length}
+              {visitedCount} / {beatShops.length}
             </p>
             <span className="text-xs font-bold text-emerald-500">{progressPercent}%</span>
           </div>
@@ -409,8 +398,10 @@ export const SalesmanDashboard = () => {
 
         <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631]">
           <p className="text-xs font-semibold text-slate-400">Total Outstanding Khata</p>
-          <p className="text-2xl font-bold text-amber-500 mt-1">₹82,000</p>
-          <p className="text-[11px] text-slate-400 mt-1">Across 5 mapped kirana accounts</p>
+          <p className="text-2xl font-bold text-amber-500 mt-1">
+            ₹{totalOutstanding.toLocaleString('en-IN')}
+          </p>
+          <p className="text-[11px] text-slate-400 mt-1">Across {beatShops.length} mapped kirana accounts</p>
         </div>
       </div>
 
@@ -438,8 +429,19 @@ export const SalesmanDashboard = () => {
           </div>
         </div>
 
-        <div className="space-y-3">
-          {filteredShops.map((shop) => {
+        {loadingShops && beatShops.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 border border-dashed rounded-2xl border-slate-200 dark:border-slate-800">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-emerald-500" />
+            <p className="text-xs font-medium">Loading Beat #4 shops & syncing Dexie cache...</p>
+          </div>
+        ) : filteredShops.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 border border-dashed rounded-2xl border-slate-200 dark:border-slate-800">
+            <Store className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-xs font-medium">No shops found matching your search</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredShops.map((shop) => {
             const isVisited = shop.status === 'visited';
             return (
               <div
@@ -501,7 +503,8 @@ export const SalesmanDashboard = () => {
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
 
       {/* MODAL: Offline Order Punch Pad */}
       {showPunchModal && selectedShop && (
