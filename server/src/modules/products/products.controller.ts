@@ -104,4 +104,204 @@ export class ProductsController {
       next(error);
     }
   }
+
+  static async createProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const {
+        skuCode,
+        name,
+        brand,
+        category,
+        unit,
+        packSize,
+        mrp,
+        basePrice,
+        gstRate,
+        stockQuantity,
+        minOrderQty,
+      } = req.body;
+
+      const product = await ProductsService.createProduct({
+        skuCode,
+        name,
+        brand,
+        category,
+        unit,
+        packSize,
+        mrp: parseFloat(mrp),
+        basePrice: parseFloat(basePrice),
+        gstRate: gstRate ? parseFloat(gstRate) : 18.0,
+        stockQuantity: stockQuantity ? parseInt(stockQuantity, 10) : 0,
+        minOrderQty: minOrderQty ? parseInt(minOrderQty, 10) : 1,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Product created successfully',
+        data: product,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const {
+        name,
+        brand,
+        category,
+        unit,
+        packSize,
+        mrp,
+        basePrice,
+        gstRate,
+        isAvailable,
+        stockQuantity,
+        minOrderQty,
+      } = req.body;
+
+      const product = await ProductsService.updateProduct(id, {
+        name,
+        brand,
+        category,
+        unit,
+        packSize,
+        mrp: mrp !== undefined ? parseFloat(mrp) : undefined,
+        basePrice: basePrice !== undefined ? parseFloat(basePrice) : undefined,
+        gstRate: gstRate !== undefined ? parseFloat(gstRate) : undefined,
+        isAvailable,
+        stockQuantity: stockQuantity !== undefined ? parseInt(stockQuantity, 10) : undefined,
+        minOrderQty: minOrderQty !== undefined ? parseInt(minOrderQty, 10) : undefined,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Product updated successfully',
+        data: product,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateStock(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const { stockQuantity, minOrderQty } = req.body;
+
+      if (stockQuantity === undefined) {
+        res.status(400).json({ success: false, message: 'stockQuantity is required' });
+        return;
+      }
+
+      const result = await ProductsService.updateStock(
+        id,
+        parseInt(stockQuantity, 10),
+        minOrderQty !== undefined ? parseInt(minOrderQty, 10) : undefined
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Stock updated successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const result = await ProductsService.deleteProduct(id);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async listSchemes(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const schemes = await ProductsService.listSchemes();
+      res.status(200).json({
+        success: true,
+        data: schemes,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createScheme(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const {
+        name,
+        schemeType,
+        productId,
+        minQuantity,
+        freeQuantity,
+        discountPercent,
+        startDate,
+        endDate,
+        freeProductId,
+      } = req.body;
+
+      const scheme = await ProductsService.createScheme({
+        name,
+        schemeType,
+        productId,
+        minQuantity: parseInt(minQuantity, 10),
+        freeQuantity: freeQuantity ? parseInt(freeQuantity, 10) : 0,
+        discountPercent: discountPercent ? parseFloat(discountPercent) : 0,
+        startDate: startDate ? new Date(startDate) : new Date(),
+        endDate: endDate ? new Date(endDate) : undefined,
+        freeProductId,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Trade scheme created successfully',
+        data: scheme,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async toggleSchemeStatus(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const { isActive } = req.body;
+
+      const scheme = await ProductsService.toggleSchemeStatus(id, isActive);
+
+      res.status(200).json({
+        success: true,
+        message: `Scheme ${scheme.isActive ? 'activated' : 'paused'} successfully`,
+        data: scheme,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteScheme(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const result = await ProductsService.deleteScheme(id);
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
