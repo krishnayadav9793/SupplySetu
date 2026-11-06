@@ -68,6 +68,22 @@ export interface Scheme {
   minQuantity: number;
   freeQuantity: number;
   discountPercent: number;
+  productId?: string;
+  freeProductId?: string | null;
+  startDate?: string;
+  endDate?: string | null;
+  isActive?: boolean;
+  createdAt?: string;
+  product?: {
+    id: string;
+    skuCode: string;
+    name: string;
+    brand: string;
+    category: string;
+    unit?: string;
+    basePrice?: number;
+    mrp?: number;
+  };
 }
 
 export interface CartItem {

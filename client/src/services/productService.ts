@@ -1,5 +1,45 @@
-import { Product, CategorySummary, PriceTier } from '../types';
+import { Product, CategorySummary, PriceTier, Scheme } from '../types';
 import { apiFetch } from './api';
+
+export interface CreateProductInput {
+  skuCode: string;
+  name: string;
+  brand: string;
+  category: string;
+  unit?: string;
+  packSize: string;
+  mrp: number;
+  basePrice: number;
+  gstRate?: number;
+  stockQuantity?: number;
+  minOrderQty?: number;
+}
+
+export interface UpdateProductInput {
+  name?: string;
+  brand?: string;
+  category?: string;
+  unit?: string;
+  packSize?: string;
+  mrp?: number;
+  basePrice?: number;
+  gstRate?: number;
+  isAvailable?: boolean;
+  stockQuantity?: number;
+  minOrderQty?: number;
+}
+
+export interface CreateSchemeInput {
+  name: string;
+  schemeType: 'BUY_X_GET_Y_FREE' | 'PERCENTAGE_DISCOUNT' | 'FLAT_DISCOUNT';
+  productId: string;
+  minQuantity: number;
+  freeQuantity?: number;
+  discountPercent?: number;
+  startDate?: string;
+  endDate?: string;
+  freeProductId?: string;
+}
 
 // Fallback / Offline mock catalogue conforming to the FMCG distributor specification
 const FALLBACK_PRODUCTS: Product[] = [
@@ -379,5 +419,128 @@ export const ProductService = {
     }
 
     return FALLBACK_PRODUCTS.find((p) => p.id === id || p.skuCode === id) || null;
+  },
+
+  async createProduct(data: CreateProductInput): Promise<{ success: boolean; data?: Product; message?: string }> {
+    try {
+      const res = await apiFetch<Product>('/products', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return { success: res.success, data: res.data, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to create product' };
+    }
+  },
+
+  async updateProduct(id: string, data: UpdateProductInput): Promise<{ success: boolean; data?: Product; message?: string }> {
+    try {
+      const res = await apiFetch<Product>(`/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return { success: res.success, data: res.data, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to update product' };
+    }
+  },
+
+  async updateStock(id: string, stockQuantity: number, minOrderQty?: number): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await apiFetch<{ productId: string; stockQuantity: number }>(`/products/${id}/stock`, {
+        method: 'PATCH',
+        body: JSON.stringify({ stockQuantity, minOrderQty }),
+      });
+      return { success: res.success, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to update stock' };
+    }
+  },
+
+  async deleteProduct(id: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await apiFetch<any>(`/products/${id}`, {
+        method: 'DELETE',
+      });
+      return { success: res.success, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to delete product' };
+    }
+  },
+
+  async listSchemes(): Promise<Scheme[]> {
+    try {
+      const res = await apiFetch<Scheme[]>('/products/schemes');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Backend API unavailable, using fallback schemes:', err);
+    }
+
+    return [
+      {
+        id: 'sch-1',
+        name: 'Parle-G 10+1 Dhamaka Scheme',
+        schemeType: 'BUY_X_GET_Y_FREE',
+        minQuantity: 10,
+        freeQuantity: 1,
+        discountPercent: 0,
+        isActive: true,
+      },
+      {
+        id: 'sch-2',
+        name: 'Maggi Monsoon 12+1 Retailer Deal',
+        schemeType: 'BUY_X_GET_Y_FREE',
+        minQuantity: 12,
+        freeQuantity: 1,
+        discountPercent: 0,
+        isActive: true,
+      },
+      {
+        id: 'sch-3',
+        name: 'Surf Excel 5% Bulk Discount Scheme',
+        schemeType: 'PERCENTAGE_DISCOUNT',
+        minQuantity: 5,
+        freeQuantity: 0,
+        discountPercent: 5,
+        isActive: true,
+      },
+    ];
+  },
+
+  async createScheme(data: CreateSchemeInput): Promise<{ success: boolean; data?: Scheme; message?: string }> {
+    try {
+      const res = await apiFetch<Scheme>('/products/schemes', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return { success: res.success, data: res.data, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to create trade scheme' };
+    }
+  },
+
+  async toggleSchemeStatus(id: string, isActive?: boolean): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await apiFetch<Scheme>(`/products/schemes/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive }),
+      });
+      return { success: res.success, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to toggle scheme status' };
+    }
+  },
+
+  async deleteScheme(id: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await apiFetch<any>(`/products/schemes/${id}`, {
+        method: 'DELETE',
+      });
+      return { success: res.success, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Failed to delete scheme' };
+    }
   },
 };
