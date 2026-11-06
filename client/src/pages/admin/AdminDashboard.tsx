@@ -29,12 +29,14 @@ import {
   Trash2,
   Gift,
   DollarSign,
+  Radio,
 } from 'lucide-react';
 import { Order, OrderDeskMetrics, RetailerProfile, Product, Scheme, CategorySummary } from '../../types';
 import { OrderService } from '../../services/orderService';
 import { SalesmanService, SalesmanRecord } from '../../services/salesmanService';
 import { RetailerService } from '../../services/retailerService';
 import { ProductService } from '../../services/productService';
+import { NotificationService } from '../../services/notificationService';
 
 interface AdminDashboardProps {
   currentTab?: string;
@@ -44,6 +46,17 @@ interface AdminDashboardProps {
 export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDashboardProps) => {
   // Global notifications
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
+
+  // Real-Time Notification state
+  const [liveOrderToast, setLiveOrderToast] = useState<{
+    id: string;
+    orderNumber: string;
+    shopName: string;
+    amount: number;
+    createdVia: string;
+    salesmanName?: string | null;
+  } | null>(null);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
 
   // ----------------------------------------------------
   // 1. ORDER DESK STATE
@@ -214,6 +227,38 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
     loadStaffData();
     loadCatalogueData();
     loadSchemesData();
+
+    // Subscribe to real-time notification stream
+    const unsubStatus = NotificationService.subscribeStatus((connected) => {
+      setIsRealtimeConnected(connected);
+    });
+
+    const unsubEvents = NotificationService.subscribe((event) => {
+      if (event.type === 'ORDER_CREATED') {
+        const o = event.data;
+        setLiveOrderToast({
+          id: o.id,
+          orderNumber: o.orderNumber,
+          shopName: o.shopName,
+          amount: o.finalAmount,
+          createdVia: o.createdVia,
+          salesmanName: o.salesmanName,
+        });
+        setTimeout(() => setLiveOrderToast(null), 6000);
+
+        // Prepend new order and update metrics live without manual refresh
+        loadOrdersData();
+      } else if (event.type === 'ORDER_STATUS_CHANGED') {
+        loadOrdersData();
+      } else if (event.type === 'STOCK_UPDATED') {
+        loadCatalogueData();
+      }
+    });
+
+    return () => {
+      unsubStatus();
+      unsubEvents();
+    };
   }, []);
 
   // ----------------------------------------------------
@@ -2369,6 +2414,43 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   // ==========================================
   return (
     <div className="space-y-6 pb-8">
+      {/* Floating Live Order Alert Toast */}
+      {liveOrderToast && (
+        <div className="fixed top-20 right-6 z-50 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-emerald-500/50 animate-slideDown flex items-start gap-3 ring-4 ring-emerald-500/20">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-400 flex items-center justify-center flex-shrink-0 text-white shadow-md">
+            <Radio className="w-5 h-5 animate-pulse" />
+          </div>
+          <div className="flex-1 min-w-0 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-emerald-400 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Live Order Punched
+              </span>
+              <button
+                onClick={() => setLiveOrderToast(null)}
+                className="text-slate-400 hover:text-white text-base leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <p className="text-sm font-bold mt-0.5 truncate text-white">
+              {liveOrderToast.shopName}
+            </p>
+            <p className="text-slate-300 mt-0.5">
+              Order <strong className="text-white font-mono">{liveOrderToast.orderNumber}</strong> for{' '}
+              <strong className="text-emerald-400 font-bold">₹{liveOrderToast.amount.toFixed(0)}</strong>
+            </p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {liveOrderToast.createdVia === 'SALESMAN_APP'
+                ? `📱 Beat Salesman: ${liveOrderToast.salesmanName || 'Field Agent'}`
+                : liveOrderToast.createdVia === 'AI_CAPTURE'
+                ? '🤖 AI WhatsApp'
+                : '💻 Kirana Portal'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {actionSuccessMessage && (
         <div className="p-3 bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center justify-between shadow-md animate-slideDown">
           <div className="flex items-center gap-2">
@@ -2506,6 +2588,17 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Incoming Orders Queue</span>
+                <span
+                  className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                    isRealtimeConnected
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                  }`}
+                  title={isRealtimeConnected ? 'Live auto-refresh via Server-Sent Events' : 'Reconnecting to live stream...'}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                  <span>{isRealtimeConnected ? 'Live Sync' : 'Reconnecting'}</span>
+                </span>
                 <button
                   onClick={loadOrdersData}
                   className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
