@@ -1,6 +1,7 @@
 import { PriceTier, Prisma, SchemeType } from '@prisma/client';
 import { prisma } from '../../config';
 import { PricingService } from '../pricing/pricing.service';
+import { eventBus } from '../notifications/events';
 
 export interface ProductQueryParams {
   search?: string;
@@ -420,6 +421,18 @@ export class ProductsService {
       update: {
         stockQuantity: Math.max(0, stockQuantity),
         ...(minOrderQty !== undefined && { minOrderQty: Math.max(1, minOrderQty) }),
+      },
+    });
+
+    eventBus.broadcast({
+      type: 'STOCK_UPDATED',
+      data: {
+        productId: id,
+        skuCode: product.skuCode,
+        name: product.name,
+        stockQuantity: updated.stockQuantity,
+        minOrderQty: updated.minOrderQty,
+        updatedAt: updated.updatedAt.toISOString(),
       },
     });
 

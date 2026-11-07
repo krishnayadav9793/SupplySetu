@@ -1,6 +1,7 @@
 import { OrderStatus, Role } from '@prisma/client';
 import { prisma } from '../../config';
 import { PricingService } from '../pricing/pricing.service';
+import { eventBus } from '../notifications/events';
 
 export interface CreateOrderItemInput {
   productId: string;
@@ -164,6 +165,13 @@ export class OrdersService {
             outstandingBalance: true,
           },
         },
+        salesman: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
         items: {
           include: {
             product: {
@@ -176,6 +184,27 @@ export class OrdersService {
             },
           },
         },
+      },
+    });
+
+    // Broadcast real-time live notification
+    eventBus.broadcast({
+      type: 'ORDER_CREATED',
+      data: {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        retailerId: order.retailerId,
+        shopName: order.retailer.shopName,
+        ownerName: order.retailer.ownerName,
+        city: order.retailer.city,
+        salesmanId: order.salesmanId,
+        salesmanName: order.salesman ? order.salesman.name : null,
+        totalAmount: order.totalAmount,
+        finalAmount: order.finalAmount,
+        itemsCount: order.items.length,
+        creditStatus: exceedsCredit ? 'HOLD' : 'APPROVED',
+        createdVia: order.createdVia,
+        createdAt: order.createdAt.toISOString(),
       },
     });
 
@@ -369,6 +398,20 @@ export class OrdersService {
       return approved;
     });
 
+    // Broadcast live event
+    eventBus.broadcast({
+      type: 'ORDER_STATUS_CHANGED',
+      data: {
+        id: updatedOrder.id,
+        orderNumber: updatedOrder.orderNumber,
+        status: 'APPROVED',
+        shopName: updatedOrder.retailer.shopName,
+        finalAmount: updatedOrder.finalAmount,
+        reason: notes,
+        updatedAt: updatedOrder.updatedAt.toISOString(),
+      },
+    });
+
     return updatedOrder;
   }
 
@@ -394,6 +437,20 @@ export class OrdersService {
       },
       include: {
         retailer: true,
+      },
+    });
+
+    // Broadcast live event
+    eventBus.broadcast({
+      type: 'ORDER_STATUS_CHANGED',
+      data: {
+        id: updated.id,
+        orderNumber: updated.orderNumber,
+        status: 'REJECTED',
+        shopName: updated.retailer.shopName,
+        finalAmount: updated.finalAmount,
+        reason,
+        updatedAt: updated.updatedAt.toISOString(),
       },
     });
 
