@@ -1,6 +1,14 @@
-import { ValidatedAiOrderCaptureResult, SamplePrompt } from '../types';
+import { ValidatedAiOrderCaptureResult, SamplePrompt, AiStatusResponse } from '../types';
 import { apiFetch } from './api';
 import { ProductService } from './productService';
+
+export interface SampleParchi {
+  id: string;
+  title: string;
+  category: string;
+  lines: string[];
+  notes: string;
+}
 
 export const SAMPLE_PROMPTS: SamplePrompt[] = [
   {
@@ -20,7 +28,118 @@ export const SAMPLE_PROMPTS: SamplePrompt[] = [
   },
 ];
 
+export const SAMPLE_PARCHIS: SampleParchi[] = [
+  {
+    id: 'parchi-1',
+    title: 'Daily Kirana Order Slip (दुकान पर्ची)',
+    category: 'Grocery Staples',
+    lines: [
+      '1. पारले जी (Parle-G) - 10 पेटी',
+      '2. मैगी नूडल (Maggi) - 5 केस',
+      '3. टाटा नमक 1kg - 2 पेटी',
+      '4. फॉर्च्यून सोया तेल 1L - 3 बॉक्स',
+    ],
+    notes: 'कल दोपहर 2 बजे तक माल दुकान पर पहुंचा देना',
+  },
+  {
+    id: 'parchi-2',
+    title: 'Home Care & Detergents Slip',
+    category: 'Cleaning & Personal Care',
+    lines: [
+      '1. Surf Excel 500g - 5 peti',
+      '2. Lifebuoy Total Soap - 3 box',
+      '3. Dettol Handwash 200ml - 2 peti',
+      '4. Colgate Dental Cream 150g - 2 case',
+    ],
+    notes: 'Payment via UPI on delivery',
+  },
+  {
+    id: 'parchi-3',
+    title: 'Evening Snack Counter Slip',
+    category: 'Biscuits & Snacks',
+    lines: [
+      '1. Parle-G 80g Glucose - 8 peti',
+      '2. Britannia Good Day 100g - 6 case',
+      '3. Haldiram Plain Bhujia 400g - 4 box',
+    ],
+    notes: 'Urgent stock needed for weekend demand',
+  },
+];
+
+/**
+ * Generates an SVG Data URI representing a realistic handwritten Kirana paper slip ("Parchi")
+ */
+export function generateParchiDataUrl(parchi: SampleParchi): string {
+  const lineElements = parchi.lines
+    .map(
+      (line, i) =>
+        `<text x="35" y="${110 + i * 32}" font-family="'Courier New', monospace" font-size="15" font-weight="600" fill="#1e293b">${line}</text>`
+    )
+    .join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="460" height="340" viewBox="0 0 460 340">
+    <defs>
+      <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.12" />
+      </filter>
+    </defs>
+    <!-- Paper Sheet Background -->
+    <rect x="15" y="15" width="430" height="310" rx="6" fill="#fefdf7" stroke="#e2d8b3" stroke-width="1.5" filter="url(#shadow)" />
+    <!-- Notebook Red Margin Line -->
+    <line x1="28" y1="20" x2="28" y2="320" stroke="#f43f5e" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+    <!-- Notebook Horizontal Lines -->
+    <line x1="15" y1="75" x2="445" y2="75" stroke="#93c5fd" stroke-width="0.8" opacity="0.45"/>
+    <line x1="15" y1="115" x2="445" y2="115" stroke="#93c5fd" stroke-width="0.8" opacity="0.35"/>
+    <line x1="15" y1="147" x2="445" y2="147" stroke="#93c5fd" stroke-width="0.8" opacity="0.35"/>
+    <line x1="15" y1="179" x2="445" y2="179" stroke="#93c5fd" stroke-width="0.8" opacity="0.35"/>
+    <line x1="15" y1="211" x2="445" y2="211" stroke="#93c5fd" stroke-width="0.8" opacity="0.35"/>
+    <line x1="15" y1="243" x2="445" y2="243" stroke="#93c5fd" stroke-width="0.8" opacity="0.35"/>
+    <!-- Header Stamp / Title -->
+    <text x="35" y="52" font-family="'Courier New', monospace" font-size="16" font-weight="bold" fill="#0f172a">📝 ${parchi.title}</text>
+    <text x="350" y="52" font-family="sans-serif" font-size="11" fill="#64748b">${new Date().toLocaleDateString('en-IN')}</text>
+    <!-- Order Lines -->
+    ${lineElements}
+    <!-- Bottom note -->
+    <rect x="30" y="260" width="400" height="50" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="40" y="280" font-family="sans-serif" font-size="11" font-weight="bold" fill="#475569">NOTE / निर्देश:</text>
+    <text x="40" y="298" font-family="sans-serif" font-size="11" fill="#64748b">${parchi.notes}</text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 export const AiOrderService = {
+  /**
+   * Diagnostic check on Gemini API Key and active AI engine
+   */
+  async getAiStatus(): Promise<AiStatusResponse> {
+    try {
+      const res = await apiFetch<AiStatusResponse>('/ai/status');
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Could not query AI status, defaulting to local fallback mode:', err);
+    }
+
+    return {
+      isGeminiConfigured: false,
+      model: 'gemini-2.5-flash',
+      activeEngine: 'LOCAL_FMCG_PARSER',
+      supportedFeatures: [
+        'natural_language_text',
+        'handwritten_parchi_vision',
+        'voice_speech_to_text',
+        'live_stock_reconciliation',
+      ],
+      guidanceMessage:
+        'Running in Local FMCG Regex/Heuristic Mode. Set GEMINI_API_KEY in server/.env to enable live Gemini 2.5 Flash Vision.',
+    };
+  },
+
+  /**
+   * Text order capture (WhatsApp / SMS)
+   */
   async captureOrder(message: string): Promise<ValidatedAiOrderCaptureResult> {
     try {
       const res = await apiFetch<ValidatedAiOrderCaptureResult>('/ai/order-capture', {
@@ -35,8 +154,37 @@ export const AiOrderService = {
       console.warn('Backend AI service unreachable, running offline Kirana NLP Parser:', err);
     }
 
-    // Offline / fallback processing using local catalogue
     return this.parseLocally(message);
+  },
+
+  /**
+   * Multimodal order capture (Image of handwritten slip / invoice + optional voice/notes)
+   */
+  async captureMultimodalOrder(params: {
+    imageBase64?: string;
+    mimeType?: string;
+    textNotes?: string;
+  }): Promise<ValidatedAiOrderCaptureResult> {
+    try {
+      const res = await apiFetch<ValidatedAiOrderCaptureResult>('/ai/order-capture-multimodal', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Multimodal AI call failed, falling back to local extractor:', err);
+    }
+
+    // Fallback if backend is unreachable
+    if (params.textNotes) {
+      return this.parseLocally(params.textNotes);
+    }
+
+    // Fallback default sample order
+    return this.parseLocally('10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak, 3 box refined tel');
   },
 
   async getSamplePrompts(): Promise<SamplePrompt[]> {
@@ -46,7 +194,7 @@ export const AiOrderService = {
         return res.data;
       }
     } catch (err) {
-      // ignore, return default samples
+      // ignore
     }
     return SAMPLE_PROMPTS;
   },
@@ -126,27 +274,28 @@ export const AiOrderService = {
         const prod = products.find((p) => p.skuCode === matchedSku);
         if (prod) {
           const rate = prod.pricing?.rate || prod.basePrice;
+          const subtotal = rate * quantity;
+          const gst = (subtotal * prod.gstRate) / 100;
+          const itemTotal = subtotal + gst;
+
           const isAvail = prod.stock > 0;
+          const confirmedQty = isAvail ? Math.min(quantity, prod.stock) : 0;
           let stockWarning: string | null = null;
+
           if (prod.stock === 0) {
             stockWarning = 'Out of stock in Jabalpur warehouse';
             hasStockWarnings = true;
           } else if (quantity > prod.stock) {
-            stockWarning = `Only ${prod.stock} ${prod.unit}s available (requested ${quantity})`;
+            stockWarning = `Only ${prod.stock} available`;
             hasStockWarnings = true;
           }
-
-          const confirmedQty = isAvail ? (quantity > prod.stock ? prod.stock : quantity) : 0;
-          const subtotal = rate * quantity;
-          const gstAmount = (subtotal * (prod.gstRate || 18)) / 100;
-          const itemTotal = subtotal + gstAmount;
 
           totalEstimated += itemTotal;
           totalUnits += quantity;
 
           const alternatives = products
-            .filter((p) => p.id !== prod.id && p.category === prod.category)
-            .slice(0, 2)
+            .filter((p) => p.id !== prod.id && (p.category === prod.category || p.brand === prod.brand))
+            .slice(0, 3)
             .map((alt) => ({
               sku: alt.skuCode,
               productName: alt.name,
@@ -197,6 +346,8 @@ export const AiOrderService = {
       totalUnitsCount: totalUnits,
       hasStockWarnings,
       hasLowConfidenceItems: false,
+      engineUsed: 'LOCAL_FMCG_PARSER',
+      captureMode: 'TEXT',
     };
   },
 };
