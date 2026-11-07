@@ -225,3 +225,58 @@ export interface OrderDeskMetrics {
   creditHoldCount: number;
   activeSalesmenCount: number;
 }
+
+export interface KhataTransaction {
+  id: string;
+  date: string;
+  type: 'INVOICE' | 'PAYMENT';
+  referenceNo: string;
+  description: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+  paymentMode?: string;
+  orderId?: string;
+  status: string;
+}
+
+export interface KhataLedgerResponse {
+  retailer: {
+    id: string;
+    shopName: string;
+    ownerName: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    gstNumber?: string | null;
+    priceTier: string;
+    creditLimit: number;
+    outstandingBalance: number;
+    availableCredit: number;
+    creditUtilization: number;
+    creditStatus: 'HEALTHY' | 'WARNING' | 'OVERDUE_HOLD';
+    salesman?: {
+      id?: string;
+      name: string;
+      phone: string;
+    } | null;
+  };
+  summary: {
+    totalOrdersCount: number;
+    totalInvoicedAmount: number;
+    paymentTerms: string;
+    distributorUpiVpa: string;
+    distributorBankName: string;
+    distributorAccountNo: string;
+    distributorIfsc: string;
+  };
+  transactions: KhataTransaction[];
+}
+
+export interface RecordPaymentInput {
+  amount: number;
+  paymentMode?: string;
+  referenceNo?: string;
+  notes?: string;
+}

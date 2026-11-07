@@ -10,10 +10,18 @@ import {
   Store,
   Package,
   Calendar,
+  Repeat,
+  FileText,
+  CheckCircle2,
+  QrCode,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Check,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { Product, CategorySummary, Order } from '../../types';
+import { Product, CategorySummary, Order, KhataLedgerResponse } from '../../types';
 import { ProductService } from '../../services/productService';
 import { RetailerService } from '../../services/retailerService';
 import { OrderService } from '../../services/orderService';
@@ -21,6 +29,7 @@ import { ProductCard } from '../../components/catalogue/ProductCard';
 import { ProductSearchAndFilter } from '../../components/catalogue/ProductSearchAndFilter';
 import { CartSummaryBar } from '../../components/cart/CartSummaryBar';
 import { AiOrderPadModal } from '../../components/orders/AiOrderPadModal';
+import { B2bTaxInvoiceModal } from '../../components/orders/B2bTaxInvoiceModal';
 
 export interface RetailerDashboardProps {
   currentTab?: string;
@@ -29,7 +38,7 @@ export interface RetailerDashboardProps {
 
 export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab = 'shop', setCurrentTab }) => {
   const { user } = useAuth();
-  const { totalItemsCount, setIsCartDrawerOpen } = useCart();
+  const { totalItemsCount, setIsCartDrawerOpen, addToCart } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategorySummary[]>([]);
@@ -37,11 +46,28 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
   const [loading, setLoading] = useState(true);
   const [isAiOrderPadOpen, setIsAiOrderPadOpen] = useState(false);
 
+  // B2B Tax Invoice Modal State
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  // Repeating Order State
+  const [repeatingOrderId, setRepeatingOrderId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Khata Ledger State
+  const [khataData, setKhataData] = useState<KhataLedgerResponse | null>(null);
+  const [loadingKhata, setLoadingKhata] = useState(false);
+  const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
+  const [upiPaymentAmount, setUpiPaymentAmount] = useState<number>(0);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
   useEffect(() => {
     if (currentTab === 'ai-pad') {
       setIsAiOrderPadOpen(true);
     } else if (currentTab === 'cart') {
       setIsCartDrawerOpen(true);
+    } else if (currentTab === 'credit') {
+      loadKhata();
     }
   }, [currentTab, setIsCartDrawerOpen]);
 
@@ -101,12 +127,83 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
     }
   };
 
+  const loadKhata = async () => {
+    setLoadingKhata(true);
+    try {
+      const data = await RetailerService.getKhata();
+      setKhataData(data);
+      setUpiPaymentAmount(data.retailer.outstandingBalance);
+    } catch (err) {
+      console.warn('Failed to load Khata statement:', err);
+    } finally {
+      setLoadingKhata(false);
+    }
+  };
+
   useEffect(() => {
     loadCatalogue();
   }, [searchTerm, selectedCategory, inStockOnly, creditProfile.priceTier]);
 
+  // Handle 1-Click Repeat Order
+  const handleRepeatOrder = async (order: Order) => {
+    setRepeatingOrderId(order.id);
+    try {
+      // Re-add all items into active cart for retailer review
+      for (const item of order.items) {
+        const prod = await ProductService.getProductById(item.productId);
+        if (prod) {
+          addToCart(prod, item.quantity);
+        }
+      }
+      setToastMessage(`✓ Added all items from ${order.orderNumber} to your shopping cart!`);
+      setTimeout(() => setToastMessage(null), 4000);
+      setIsCartDrawerOpen(true);
+    } catch (err) {
+      console.error('Failed to repeat order:', err);
+      alert('Unable to load items to cart. Please verify stock availability.');
+    } finally {
+      setRepeatingOrderId(null);
+    }
+  };
+
+  // Handle Khata Repayment via UPI
+  const handleConfirmUpiPayment = async () => {
+    if (upiPaymentAmount <= 0) return;
+    setIsSubmittingPayment(true);
+    try {
+      const refNo = `UPI-${Date.now().toString().slice(-6)}`;
+      await RetailerService.recordPayment(creditProfile.shopName, {
+        amount: upiPaymentAmount,
+        paymentMode: 'UPI_DIRECT',
+        referenceNo: refNo,
+        notes: `Instant UPI payment for Khata balance settlement`,
+      });
+
+      setToastMessage(`✓ Payment of ₹${upiPaymentAmount.toLocaleString('en-IN')} recorded! Khata balance updated.`);
+      setTimeout(() => setToastMessage(null), 4000);
+      setIsUpiModalOpen(false);
+      await Promise.all([loadCatalogue(), loadKhata()]);
+    } catch (err) {
+      console.error('Payment record error:', err);
+      alert('Failed to record payment');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-20 right-5 z-50 animate-slideDown bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 text-xs font-semibold">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="ml-2 text-slate-400 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Banner: Retailer Welcome & Credit Khata Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Welcome & Shop Info */}
@@ -171,7 +268,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
             </div>
             <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-[#202530] overflow-hidden">
               <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  creditProfile.creditUtilization > 85 ? 'bg-rose-500' : 'bg-emerald-500'
+                }`}
                 style={{
                   width: `${Math.min(
                     (creditProfile.outstandingBalance / creditProfile.creditLimit) * 100,
@@ -185,10 +284,10 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex items-center justify-between text-[11px] text-slate-400">
             <span>Salesman: {creditProfile.salesman?.name} ({creditProfile.salesman?.phone})</span>
             <span
-              onClick={() => setCurrentTab && setCurrentTab('my-orders')}
-              className="text-emerald-500 font-semibold cursor-pointer hover:underline"
+              onClick={() => setCurrentTab && setCurrentTab('credit')}
+              className="text-emerald-500 font-semibold cursor-pointer hover:underline flex items-center gap-1"
             >
-              Order History ({myOrders.length}) &rarr;
+              <span>View Full Khata</span> &rarr;
             </span>
           </div>
         </div>
@@ -202,10 +301,10 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              AI WhatsApp / Voice Order Capture
+              AI Multimodal WhatsApp & Slip Order Capture
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Paste your handwritten list or WhatsApp message in Hindi or English (e.g. &ldquo;Parle G 10 peti, Maggi 5 case&rdquo;).
+              Snap a photo of your handwritten paper slip (&ldquo;Parchi&rdquo;), paste WhatsApp text, or record voice note in Hindi.
             </p>
           </div>
         </div>
@@ -220,17 +319,190 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
         </button>
       </div>
 
-      {/* Main Body: Toggle Between Catalogue vs Order History */}
-      {currentTab === 'my-orders' ? (
+      {/* ---------------------------------------------------------------- */}
+      {/* TAB 1: RETAILER KHATA / CREDIT STATEMENT                         */}
+      {/* ---------------------------------------------------------------- */}
+      {currentTab === 'credit' ? (
+        <div className="space-y-5 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Distributor Khata & Credit Passbook</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Weekly Settlement
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Official statement of B2B invoices, UPI repayments, credit limits, and running balance
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsUpiModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <QrCode className="w-4 h-4" />
+                <span>Pay via UPI / QR</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentTab && setCurrentTab('shop')}
+                className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Back to Catalogue
+              </button>
+            </div>
+          </div>
+
+          {/* Khata Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Credit Limit</span>
+              <p className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                ₹{creditProfile.creditLimit.toLocaleString('en-IN')}
+              </p>
+              <span className="text-[10px] text-slate-400">Assigned by Distributor</span>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Outstanding</span>
+              <p className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}
+              </p>
+              <span className="text-[10px] text-slate-400">Payable within 7 days</span>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Available Credit Line</span>
+              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                ₹{creditProfile.availableCredit.toLocaleString('en-IN')}
+              </p>
+              <span className="text-[10px] text-slate-400">Usable for new orders</span>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Khata Health</span>
+              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                <CheckCircle2 className="w-4 h-4" /> Good Standing
+              </p>
+              <span className="text-[10px] text-slate-400">{creditProfile.creditUtilization}% Limit Utilized</span>
+            </div>
+          </div>
+
+          {/* Passbook Transaction Table */}
+          <div className="rounded-2xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E] overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-slate-100 dark:border-[#222631] flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Khata Transaction Ledger</span>
+                <span className="text-xs font-normal text-slate-400">
+                  ({khataData?.transactions.length || 4} entries)
+                </span>
+              </h3>
+              <button
+                type="button"
+                onClick={loadKhata}
+                className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingKhata ? 'animate-spin' : ''}`} />
+                <span>Refresh Passbook</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-[#1a1e27] text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-[#222631]">
+                    <th className="py-3 px-4">Date & Time</th>
+                    <th className="py-3 px-3">Type</th>
+                    <th className="py-3 px-3">Voucher / Ref</th>
+                    <th className="py-3 px-4">Particulars</th>
+                    <th className="py-3 px-3 text-right text-rose-500">Debit (+)</th>
+                    <th className="py-3 px-3 text-right text-emerald-500">Credit (-)</th>
+                    <th className="py-3 px-4 text-right">Balance</th>
+                    <th className="py-3 px-3 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-[#222631]">
+                  {(khataData?.transactions || []).map((txn) => {
+                    const isInvoice = txn.type === 'INVOICE';
+                    return (
+                      <tr key={txn.id} className="hover:bg-slate-50/50 dark:hover:bg-[#1a1e27]/50">
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {new Date(txn.date).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase flex items-center gap-1 w-fit ${
+                              isInvoice
+                                ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'
+                                : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
+                            }`}
+                          >
+                            {isInvoice ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                            {isInvoice ? 'Invoice' : 'Payment'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
+                          {txn.referenceNo}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
+                          {txn.description}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-semibold text-rose-600 dark:text-rose-400">
+                          {txn.debit > 0 ? `₹${txn.debit.toFixed(2)}` : '-'}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                          {txn.credit > 0 ? `₹${txn.credit.toFixed(2)}` : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-white">
+                          ₹{txn.runningBalance.toFixed(2)}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          {txn.orderId && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const ord = myOrders.find((o) => o.id === txn.orderId);
+                                if (ord) {
+                                  setSelectedInvoiceOrder(ord);
+                                  setIsInvoiceModalOpen(true);
+                                } else {
+                                  alert(`Invoice ${txn.referenceNo} can be viewed in My Orders.`);
+                                }
+                              }}
+                              className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 underline cursor-pointer"
+                            >
+                              Tax Invoice
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : /* ---------------------------------------------------------------- */
+      /* TAB 2: MY PLACED ORDERS & TAX INVOICES                           */
+      /* ---------------------------------------------------------------- */
+      currentTab === 'my-orders' ? (
         <div className="space-y-4 animate-fadeIn">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Placed Orders</h2>
-              <p className="text-xs text-slate-400">Track order approvals, dispatch status, and previous invoices</p>
+              <p className="text-xs text-slate-400">Track order approvals, dispatch status, and download tax invoices</p>
             </div>
             <button
               onClick={() => setCurrentTab && setCurrentTab('shop')}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Back to Catalogue
             </button>
@@ -244,81 +516,171 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                 <p className="text-xs mt-1">Place an order from the catalogue or AI pad to see it here.</p>
               </div>
             ) : (
-              myOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="rounded-2xl border border-slate-200/80 dark:border-[#222631] p-4 bg-white dark:bg-[#16181E] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                      <Package className="w-5 h-5" />
+              myOrders.map((order) => {
+                const isDelivered = order.status === 'DELIVERED';
+                const isDispatched = order.status === 'DISPATCHED';
+                const isApproved = order.status === 'APPROVED';
+                const isRejected = order.status === 'REJECTED';
+
+                return (
+                  <div
+                    key={order.id}
+                    className="rounded-2xl border border-slate-200/80 dark:border-[#222631] p-4 bg-white dark:bg-[#16181E] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        <Package className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white">
+                            {order.orderNumber}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isDelivered
+                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                                : isDispatched
+                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400'
+                                : isApproved
+                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                                : isRejected
+                                ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
+                                : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                          {order.items.map((i) => `${i.product?.name || 'Product'} (${i.quantity} ${i.unit})`).join(', ')}
+                        </p>
+
+                        {/* Order Progress Timeline */}
+                        <div className="flex items-center gap-2 my-2 text-[11px] font-semibold">
+                          <div className="flex items-center gap-1 text-emerald-600">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <span>Placed</span>
+                          </div>
+                          <span className="text-slate-300 dark:text-slate-600">&rarr;</span>
+                          <div
+                            className={`flex items-center gap-1 ${
+                              isApproved || isDispatched || isDelivered
+                                ? 'text-emerald-600'
+                                : isRejected
+                                ? 'text-rose-500'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isApproved || isDispatched || isDelivered
+                                  ? 'bg-emerald-500'
+                                  : isRejected
+                                  ? 'bg-rose-500'
+                                  : 'bg-slate-300 dark:bg-slate-700'
+                              }`}
+                            />
+                            <span>{isRejected ? 'Rejected' : 'Approved'}</span>
+                          </div>
+                          <span className="text-slate-300 dark:text-slate-600">&rarr;</span>
+                          <div
+                            className={`flex items-center gap-1 ${
+                              isDispatched || isDelivered ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isDispatched || isDelivered ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'
+                              }`}
+                            />
+                            <span>Dispatched</span>
+                          </div>
+                          <span className="text-slate-300 dark:text-slate-600">&rarr;</span>
+                          <div
+                            className={`flex items-center gap-1 ${
+                              isDelivered ? 'text-emerald-600' : 'text-slate-400'
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isDelivered ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                              }`}
+                            />
+                            <span>Delivered</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {order.createdVia === 'AI_CAPTURE'
+                              ? 'AI WhatsApp'
+                              : order.createdVia === 'SALESMAN_APP'
+                              ? 'Salesman Punch'
+                              : order.createdVia === 'REPEAT_ORDER'
+                              ? '1-Click Reorder'
+                              : 'Direct Portal'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
-                          {order.orderNumber}
+
+                    <div className="text-right sm:border-l sm:border-slate-100 dark:sm:border-slate-800 sm:pl-6 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end gap-2">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Amount</span>
+                        <span className="text-base font-bold text-slate-900 dark:text-white">
+                          ₹{order.finalAmount.toFixed(2)}
                         </span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                            order.status === 'APPROVED'
-                              ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
-                              : order.status === 'REJECTED'
-                              ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
-                              : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
-                          }`}
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        {/* 1-Click Repeat Order */}
+                        <button
+                          type="button"
+                          disabled={repeatingOrderId === order.id}
+                          onClick={() => handleRepeatOrder(order)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-1 transition-all cursor-pointer"
+                          title="Load exact items to active shopping cart"
                         >
-                          {order.status}
-                        </span>
-                      </div>
+                          <Repeat className={`w-3.5 h-3.5 ${repeatingOrderId === order.id ? 'animate-spin' : ''}`} />
+                          <span>Reorder</span>
+                        </button>
 
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {order.items.map((i) => `${i.product?.name || 'Product'} (${i.quantity} ${i.unit})`).join(', ')}
-                      </p>
-
-                      <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(order.createdAt).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                        <span>•</span>
-                        <span>
-                          {order.createdVia === 'AI_CAPTURE'
-                            ? 'AI WhatsApp'
-                            : order.createdVia === 'SALESMAN_APP'
-                            ? 'Salesman Punch'
-                            : 'Direct Web Portal'}
-                        </span>
+                        {/* View Tax Invoice */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInvoiceOrder(order);
+                            setIsInvoiceModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Invoice</span>
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  <div className="text-right sm:border-l sm:border-slate-100 dark:sm:border-slate-800 sm:pl-6 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Amount</span>
-                      <span className="text-base font-bold text-slate-900 dark:text-white">
-                        ₹{order.finalAmount.toFixed(2)}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => alert(`Viewing tax invoice copy for ${order.orderNumber}`)}
-                      className="mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline cursor-pointer"
-                    >
-                      View Invoice &rarr;
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       ) : (
-        /* Product Catalogue Section */
+        /* ---------------------------------------------------------------- */
+        /* TAB 3: PRODUCT CATALOGUE (DEFAULT)                              */
+        /* ---------------------------------------------------------------- */
         <div>
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -394,6 +756,129 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           }
         }}
       />
+
+      {/* Printable B2B GST Tax Invoice Modal */}
+      <B2bTaxInvoiceModal
+        order={selectedInvoiceOrder}
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoiceOrder(null);
+        }}
+      />
+
+      {/* UPI QR Payment Modal */}
+      {isUpiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200 dark:border-[#222631] shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#222631]">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Pay Khata Balance via UPI</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUpiModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-center space-y-3">
+              {/* Synthetic UPI QR Code */}
+              <div className="mx-auto w-48 h-48 rounded-xl bg-white p-3 border-2 border-emerald-500 shadow-md flex flex-col items-center justify-center">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  {/* Outer Frame */}
+                  <rect width="100" height="100" fill="white" />
+                  {/* Corner Position Detection Patterns */}
+                  <rect x="5" y="5" width="28" height="28" fill="#0f172a" rx="4" />
+                  <rect x="9" y="9" width="20" height="20" fill="white" rx="2" />
+                  <rect x="13" y="13" width="12" height="12" fill="#0f172a" rx="2" />
+
+                  <rect x="67" y="5" width="28" height="28" fill="#0f172a" rx="4" />
+                  <rect x="71" y="9" width="20" height="20" fill="white" rx="2" />
+                  <rect x="75" y="13" width="12" height="12" fill="#0f172a" rx="2" />
+
+                  <rect x="5" y="67" width="28" height="28" fill="#0f172a" rx="4" />
+                  <rect x="9" y="71" width="20" height="20" fill="white" rx="2" />
+                  <rect x="13" y="75" width="12" height="12" fill="#0f172a" rx="2" />
+
+                  {/* Synthetic Data Pixels */}
+                  <rect x="38" y="10" width="8" height="8" fill="#10b981" />
+                  <rect x="50" y="10" width="8" height="8" fill="#0f172a" />
+                  <rect x="42" y="22" width="6" height="6" fill="#0f172a" />
+                  <rect x="52" y="22" width="8" height="8" fill="#10b981" />
+
+                  <rect x="10" y="38" width="8" height="8" fill="#0f172a" />
+                  <rect x="22" y="42" width="8" height="8" fill="#10b981" />
+                  <rect x="38" y="38" width="10" height="10" fill="#0f172a" />
+                  <rect x="52" y="42" width="12" height="8" fill="#0f172a" />
+                  <rect x="70" y="38" width="8" height="8" fill="#10b981" />
+                  <rect x="82" y="42" width="8" height="8" fill="#0f172a" />
+
+                  <rect x="38" y="55" width="8" height="12" fill="#10b981" />
+                  <rect x="52" y="55" width="8" height="8" fill="#0f172a" />
+                  <rect x="70" y="55" width="14" height="6" fill="#0f172a" />
+
+                  <rect x="38" y="72" width="12" height="8" fill="#0f172a" />
+                  <rect x="55" y="72" width="8" height="14" fill="#10b981" />
+                  <rect x="70" y="72" width="10" height="8" fill="#0f172a" />
+                  <rect x="84" y="80" width="8" height="8" fill="#10b981" />
+                </svg>
+              </div>
+
+              <div>
+                <p className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
+                  supplysetu.distributor@icici
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  SupplySetu FMCG Distributors Pvt Ltd &bull; Jabalpur
+                </p>
+              </div>
+
+              {/* Amount Input */}
+              <div className="text-left space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Payment Settlement Amount (₹):
+                </label>
+                <input
+                  type="number"
+                  value={upiPaymentAmount}
+                  onChange={(e) => setUpiPaymentAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full text-base font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                />
+                <span className="text-[11px] text-slate-400 block">
+                  Total Outstanding Dues: ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsUpiModalOpen(false)}
+                className="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingPayment || upiPaymentAmount <= 0}
+                onClick={handleConfirmUpiPayment}
+                className="w-1/2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isSubmittingPayment ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>Record Paid (₹{upiPaymentAmount.toLocaleString('en-IN')})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

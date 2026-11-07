@@ -344,6 +344,90 @@ export const OrderService = {
     return updated.find((o) => o.id === orderId)!;
   },
 
+  async dispatchOrder(orderId: string, notes?: string): Promise<Order> {
+    try {
+      const res = await apiFetch<Order>(`/orders/${orderId}/dispatch`, {
+        method: 'PATCH',
+        body: JSON.stringify({ notes }),
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Backend API unreachable, dispatching locally:', err);
+    }
+
+    const orders = getStoredOrders();
+    const updated = orders.map((o) =>
+      o.id === orderId
+        ? {
+            ...o,
+            status: 'DISPATCHED' as OrderStatus,
+            notes: notes ? `${o.notes || ''} [Dispatched: ${notes}]` : o.notes,
+          }
+        : o
+    );
+    saveStoredOrders(updated);
+    return updated.find((o) => o.id === orderId)!;
+  },
+
+  async deliverOrder(orderId: string, notes?: string): Promise<Order> {
+    try {
+      const res = await apiFetch<Order>(`/orders/${orderId}/deliver`, {
+        method: 'PATCH',
+        body: JSON.stringify({ notes }),
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Backend API unreachable, delivering locally:', err);
+    }
+
+    const orders = getStoredOrders();
+    const updated = orders.map((o) =>
+      o.id === orderId
+        ? {
+            ...o,
+            status: 'DELIVERED' as OrderStatus,
+            notes: notes ? `${o.notes || ''} [Delivered: ${notes}]` : o.notes,
+          }
+        : o
+    );
+    saveStoredOrders(updated);
+    return updated.find((o) => o.id === orderId)!;
+  },
+
+  async repeatOrder(orderId: string): Promise<Order> {
+    try {
+      const res = await apiFetch<Order>(`/orders/${orderId}/repeat`, {
+        method: 'POST',
+      });
+      if (res.success && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      console.warn('Backend API unreachable, repeating order locally:', err);
+    }
+
+    const orders = getStoredOrders();
+    const source = orders.find((o) => o.id === orderId);
+    if (!source) throw new Error(`Order ${orderId} not found`);
+
+    const newOrder: Order = {
+      ...source,
+      id: `ord-${Date.now().toString().slice(-4)}`,
+      orderNumber: `ORD-${Date.now().toString().slice(-4)}`,
+      status: 'PENDING',
+      notes: `1-Click Reorder from ${source.orderNumber}`,
+      createdVia: 'REPEAT_ORDER',
+      createdAt: new Date().toISOString(),
+    };
+
+    saveStoredOrders([newOrder, ...orders]);
+    return newOrder;
+  },
+
   async getDeskMetrics(): Promise<OrderDeskMetrics> {
     try {
       const res = await apiFetch<OrderDeskMetrics>('/orders/metrics');

@@ -30,9 +30,12 @@ import {
   Gift,
   DollarSign,
   Radio,
+  Truck,
+  Printer,
 } from 'lucide-react';
 import { Order, OrderDeskMetrics, RetailerProfile, Product, Scheme, CategorySummary } from '../../types';
 import { OrderService } from '../../services/orderService';
+import { B2bTaxInvoiceModal } from '../../components/orders/B2bTaxInvoiceModal';
 import { SalesmanService, SalesmanRecord } from '../../services/salesmanService';
 import { RetailerService } from '../../services/retailerService';
 import { ProductService } from '../../services/productService';
@@ -76,6 +79,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   // ----------------------------------------------------
   // 2. STAFF & RETAILERS STATE
@@ -296,6 +301,38 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
       loadOrdersData();
     } catch (err) {
       alert('Failed to reject order');
+    }
+  };
+
+  const handleDispatch = async (orderId: string) => {
+    try {
+      const updated = await OrderService.dispatchOrder(orderId, 'Dispatched via Delivery Van #MP20-GA-4892');
+      setActionSuccessMessage(`Order ${updated.orderNumber} dispatched for delivery!`);
+      setTimeout(() => setActionSuccessMessage(null), 3500);
+
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(updated);
+      }
+      loadOrdersData();
+    } catch (err) {
+      alert('Failed to dispatch order');
+    }
+  };
+
+  const handleDeliver = async (orderId: string) => {
+    try {
+      const updated = await OrderService.deliverOrder(orderId, 'Delivered and acknowledged by kirana shopkeeper');
+      setActionSuccessMessage(`Order ${updated.orderNumber} marked as delivered!`);
+      setTimeout(() => setActionSuccessMessage(null), 3500);
+
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(updated);
+      }
+      loadOrdersData();
+    } catch (err) {
+      alert('Failed to mark order as delivered');
     }
   };
 
@@ -2744,6 +2781,14 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                             <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-500/20">
                               Approved
                             </span>
+                          ) : order.status === 'DISPATCHED' ? (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded border border-blue-500/20">
+                              Dispatched
+                            </span>
+                          ) : order.status === 'DELIVERED' ? (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.5 rounded">
+                              Delivered
+                            </span>
                           ) : (
                             <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                               Pending
@@ -2755,17 +2800,43 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           <div className="flex gap-1 mt-2 justify-end" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleApprove(order.id)}
-                              className="h-6 w-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors"
+                              className="h-6 w-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors cursor-pointer"
                               title="Approve Order"
                             >
                               <CheckCircle2 className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleReject(order.id)}
-                              className="h-6 w-6 rounded bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors"
+                              className="h-6 w-6 rounded bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 transition-colors cursor-pointer"
                               title="Reject Order"
                             >
                               <XCircle className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+
+                        {order.status === 'APPROVED' && (
+                          <div className="flex gap-1 mt-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleDispatch(order.id)}
+                              className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Dispatch via Delivery Van"
+                            >
+                              <Truck className="h-3 w-3" />
+                              <span>Dispatch</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {order.status === 'DISPATCHED' && (
+                          <div className="flex gap-1 mt-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleDeliver(order.id)}
+                              className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Confirm Delivered"
+                            >
+                              <Check className="h-3 w-3" />
+                              <span>Deliver</span>
                             </button>
                           </div>
                         )}
@@ -2906,6 +2977,63 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                     <span>Approve & Pack</span>
                   </button>
                 </div>
+              ) : selectedOrder.status === 'APPROVED' ? (
+                <div className="pt-3 border-t border-slate-100 dark:border-[#222736] flex flex-col gap-2">
+                  <button
+                    onClick={() => handleDispatch(selectedOrder.id)}
+                    className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>Dispatch via Delivery Van</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedInvoiceOrder(selectedOrder);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                    className="w-full py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>View & Print B2B Tax Invoice</span>
+                  </button>
+                </div>
+              ) : selectedOrder.status === 'DISPATCHED' ? (
+                <div className="pt-3 border-t border-slate-100 dark:border-[#222736] flex flex-col gap-2">
+                  <button
+                    onClick={() => handleDeliver(selectedOrder.id)}
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirm Order Delivered</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedInvoiceOrder(selectedOrder);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                    className="w-full py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>View & Print B2B Tax Invoice</span>
+                  </button>
+                </div>
+              ) : selectedOrder.status === 'DELIVERED' ? (
+                <div className="pt-3 border-t border-slate-100 dark:border-[#222736] flex flex-col gap-2">
+                  <div className="py-2 text-center text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-500/20 flex items-center justify-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Order Delivered to Kirana Shop</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedInvoiceOrder(selectedOrder);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                    className="w-full py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>View & Print B2B Tax Invoice</span>
+                  </button>
+                </div>
               ) : (
                 <div className="pt-2 text-center text-xs text-slate-400">
                   Order status: <strong>{selectedOrder.status}</strong>
@@ -2921,6 +3049,16 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           )}
         </div>
       </div>
+
+      {/* Printable B2B Tax Invoice Modal */}
+      <B2bTaxInvoiceModal
+        order={selectedInvoiceOrder}
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoiceOrder(null);
+        }}
+      />
     </div>
   );
 };
