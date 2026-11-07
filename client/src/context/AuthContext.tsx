@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { User, Role } from '../types';
+import { NotificationService } from '../services/notificationService';
 
 export interface RegisterData {
   phone: string;
@@ -28,6 +29,7 @@ interface AuthContextType {
   logout: () => void;
   switchRole: (role: Role) => void;
   isLoading: boolean;
+  isVerifying: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,7 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return JSON.parse(saved);
       } catch (e) {}
     }
-    // Starts as null if not logged in, prompting the Login/Signup screen
     return null;
   });
 
@@ -83,14 +84,107 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
 
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('supplysetu-auth-user');
+    localStorage.removeItem('supplysetu-auth-token');
+    NotificationService.setCurrentUser(null);
+  };
+
+  // Keep NotificationService role context in sync with logged-in user
   useEffect(() => {
     if (user) {
-      localStorage.setItem('supplysetu-auth-user', JSON.stringify(user));
+      NotificationService.setCurrentUser({
+        id: user.id,
+        role: user.role,
+        name: user.name,
+        retailerId: user.retailer?.id,
+        salesmanId: user.salesman?.id,
+      });
     } else {
-      localStorage.removeItem('supplysetu-auth-user');
+      NotificationService.setCurrentUser(null);
     }
   }, [user]);
+
+  // ----------------------------------------------------
+  // VERIFY TOKEN & AUTHORIZATION ON INITIAL LOAD
+  // ----------------------------------------------------
+  useEffect(() => {
+    let isMounted = true;
+
+    const verifyToken = async () => {
+      const storedToken = localStorage.getItem('supplysetu-auth-token');
+      if (!storedToken) {
+        if (isMounted) {
+          setUser(null);
+          setToken(null);
+          setIsVerifying(false);
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${storedToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!isMounted) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            setUser(data.data);
+            setToken(storedToken);
+            localStorage.setItem('supplysetu-auth-user', JSON.stringify(data.data));
+            localStorage.setItem('supplysetu-auth-token', storedToken);
+          } else {
+            logout();
+          }
+        } else {
+          // Token is invalid, expired or revoked (401 Unauthorized) -> force redirect to login
+          console.warn(`[Auth] Session invalid or expired (${res.status}). Redirecting to login.`);
+          logout();
+        }
+      } catch (err) {
+        console.warn('[Auth] Server offline, checking cached credentials for offline mode:', err);
+        const cachedUser = localStorage.getItem('supplysetu-auth-user');
+        if (cachedUser && storedToken) {
+          try {
+            setUser(JSON.parse(cachedUser));
+            setToken(storedToken);
+          } catch (e) {
+            logout();
+          }
+        } else {
+          logout();
+        }
+      } finally {
+        if (isMounted) {
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    verifyToken();
+
+    // Listen to global 401 unauthorized events from apiFetch
+    const handleUnauthorizedEvent = () => {
+      logout();
+    };
+    window.addEventListener('supplysetu:unauthorized', handleUnauthorizedEvent);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('supplysetu:unauthorized', handleUnauthorizedEvent);
+    };
+  }, []);
 
   const login = async (phone: string, password?: string): Promise<AuthResponse> => {
     setIsLoading(true);
@@ -106,18 +200,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (res.ok && data.success && data.data) {
         setUser(data.data.user);
         setToken(data.data.token);
+        localStorage.setItem('supplysetu-auth-user', JSON.stringify(data.data.user));
         localStorage.setItem('supplysetu-auth-token', data.data.token);
         return { success: true };
       } else {
-        return { success: false, error: data.message || 'Login failed' };
+        return { success: false, error: data.message || 'Invalid phone or password' };
       }
     } catch (err: any) {
-      console.warn('Backend API unreachable, checking offline demo credentials:', err);
+      console.warn('Backend API unreachable, checking demo fallback:', err);
       // Fallback: match by demo phone
       const matched = Object.values(DEMO_USERS).find((u) => u.phone === phone);
       if (matched) {
         setUser(matched);
         setToken('demo-jwt-token-session');
+        localStorage.setItem('supplysetu-auth-user', JSON.stringify(matched));
         localStorage.setItem('supplysetu-auth-token', 'demo-jwt-token-session');
         return { success: true };
       }
@@ -141,6 +237,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (res.ok && data.success && data.data) {
         setUser(data.data.user);
         setToken(data.data.token);
+        localStorage.setItem('supplysetu-auth-user', JSON.stringify(data.data.user));
         localStorage.setItem('supplysetu-auth-token', data.data.token);
         return { success: true };
       } else {
@@ -154,17 +251,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('supplysetu-auth-user');
-    localStorage.removeItem('supplysetu-auth-token');
-  };
-
   const switchRole = async (newRole: Role) => {
     const demo = DEMO_USERS[newRole];
     if (demo) {
-      // Try to log in as the real seeded account for this role
       await login(demo.phone, 'password123');
     }
   };
@@ -180,6 +269,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         switchRole,
         isLoading,
+        isVerifying,
       }}
     >
       {children}

@@ -12,6 +12,7 @@ import {
   Database,
   X,
   ShoppingBag,
+  ShoppingCart,
   Send,
   TrendingUp,
   Target,
@@ -183,6 +184,13 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
     setOrderNotes('');
     setShowPunchModal(true);
   };
+
+  // Auto-open order punch pad when user navigates to Punch Order tab
+  useEffect(() => {
+    if (currentTab === 'punch' && beatShops.length > 0) {
+      handleOpenPunchModal(selectedShop || beatShops[0]);
+    }
+  }, [currentTab, beatShops.length]);
 
   const handleQuantityChange = (productId: string, qty: number) => {
     if (qty <= 0) {
@@ -634,6 +642,27 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
               <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Punch Mode Banner */}
+      {currentTab === 'punch' && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 p-3.5 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <ShoppingCart className="w-5 h-5 text-emerald-500" />
+            <div>
+              <p className="font-bold text-xs">Punch Order Mode Active</p>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                Tap on any Kirana shop below to open the fast order punching pad.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleOpenPunchModal()}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+          >
+            Open Order Pad
+          </button>
         </div>
       )}
 

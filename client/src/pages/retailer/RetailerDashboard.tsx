@@ -18,10 +18,12 @@ import {
   ArrowDownLeft,
   Check,
   X,
+  Percent,
+  ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { Product, CategorySummary, Order, KhataLedgerResponse } from '../../types';
+import { Product, CategorySummary, Order, KhataLedgerResponse, Scheme } from '../../types';
 import { ProductService } from '../../services/productService';
 import { RetailerService } from '../../services/retailerService';
 import { OrderService } from '../../services/orderService';
@@ -61,6 +63,22 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
   const [upiPaymentAmount, setUpiPaymentAmount] = useState<number>(0);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
+  // Active Trade Schemes State
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [loadingSchemes, setLoadingSchemes] = useState(false);
+
+  const loadSchemes = async () => {
+    setLoadingSchemes(true);
+    try {
+      const list = await ProductService.listSchemes();
+      setSchemes(list);
+    } catch (e) {
+      console.warn('Failed to load schemes:', e);
+    } finally {
+      setLoadingSchemes(false);
+    }
+  };
+
   useEffect(() => {
     if (currentTab === 'ai-pad') {
       setIsAiOrderPadOpen(true);
@@ -68,6 +86,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
       setIsCartDrawerOpen(true);
     } else if (currentTab === 'credit') {
       loadKhata();
+    } else if (currentTab === 'schemes') {
+      loadSchemes();
     }
   }, [currentTab, setIsCartDrawerOpen]);
 
@@ -675,6 +695,112 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                 );
               })
             )}
+          </div>
+        </div>
+      ) : currentTab === 'schemes' ? (
+        /* ---------------------------------------------------------------- */
+        /* TAB: ACTIVE B2B TRADE SCHEMES FOR RETAILERS                      */
+        /* ---------------------------------------------------------------- */
+        <div className="space-y-4 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Percent className="w-5 h-5 text-emerald-500" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Active B2B Trade Schemes</h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Wholesale Savings
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Official distributor promotions &mdash; Buy X Get Y Free and Bulk Margin slabs
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={loadSchemes}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Refresh active schemes"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingSchemes ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => setCurrentTab && setCurrentTab('shop')}
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Back to Catalogue
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {schemes.map((scheme) => {
+              const matchedProduct = products.find((p) => p.id === scheme.productId) || products[0];
+              const isBuyXGetY = scheme.schemeType === 'BUY_X_GET_Y_FREE';
+              const isPercentage = scheme.schemeType === 'PERCENTAGE_DISCOUNT';
+
+              return (
+                <div
+                  key={scheme.id}
+                  className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between gap-3 hover:border-emerald-500/40 transition-all"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        {isBuyXGetY ? 'Buy X Get Y Free' : isPercentage ? `${scheme.discountPercent}% Bulk Discount` : 'Special FMCG Deal'}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                        Active
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white mt-2">
+                      {scheme.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      {isBuyXGetY ? `Order minimum ${scheme.minQuantity} units to get ${scheme.freeQuantity} unit free!` : `Order minimum ${scheme.minQuantity} units to get ${scheme.discountPercent}% flat discount!`}
+                    </p>
+
+                    {matchedProduct && (
+                      <div className="mt-3 p-2.5 rounded-xl bg-slate-50 dark:bg-[#1A1D24] border border-slate-200/60 dark:border-[#262B35] flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
+                          {matchedProduct.brand ? matchedProduct.brand.substring(0, 2) : 'SKU'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {matchedProduct.name}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            Rate: ₹{matchedProduct.basePrice} &bull; MRP: ₹{matchedProduct.mrp}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      Min Qty: {scheme.minQuantity || 10}
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (matchedProduct) {
+                          const qty = scheme.minQuantity || 10;
+                          addToCart(matchedProduct, qty);
+                          setToastMessage(`Scheme Applied: Added ${qty} units of ${matchedProduct.name} to cart!`);
+                          setTimeout(() => setToastMessage(null), 3000);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                      <span>Add Deal to Cart</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (

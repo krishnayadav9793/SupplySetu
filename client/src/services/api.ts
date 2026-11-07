@@ -21,6 +21,12 @@ export async function apiFetch<T>(
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // Token is invalid or expired - trigger unauthorized redirect to login
+      localStorage.removeItem('supplysetu-auth-token');
+      localStorage.removeItem('supplysetu-auth-user');
+      window.dispatchEvent(new CustomEvent('supplysetu:unauthorized'));
+    }
     const errorBody = await response.json().catch(() => ({}));
     throw new Error(errorBody.message || `API error: ${response.statusText}`);
   }

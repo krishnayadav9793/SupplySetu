@@ -8,6 +8,12 @@ export interface User {
   name: string;
   role: Role;
   retailer?: RetailerProfile | null;
+  salesman?: {
+    id: string;
+    name: string;
+    phone: string;
+    beatRoute?: string;
+  } | null;
 }
 
 export interface RetailerProfile {

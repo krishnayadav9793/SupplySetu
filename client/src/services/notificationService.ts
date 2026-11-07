@@ -39,6 +39,14 @@ export type LiveNotificationEvent =
   | { type: 'ORDER_STATUS_CHANGED'; data: LiveOrderStatusData }
   | { type: 'STOCK_UPDATED'; data: LiveStockUpdatedData };
 
+export interface ActiveUserContext {
+  id: string;
+  role: 'ADMIN' | 'SALESMAN' | 'RETAILER';
+  name?: string;
+  retailerId?: string;
+  salesmanId?: string;
+}
+
 export interface StoredNotification {
   id: string;
   type: LiveNotificationEvent['type'];
@@ -46,6 +54,9 @@ export interface StoredNotification {
   message: string;
   timestamp: string;
   read: boolean;
+  targetTab?: string;
+  targetOrderId?: string;
+  roleRelevance: 'ADMIN' | 'SALESMAN' | 'RETAILER' | 'ALL';
   rawEvent: LiveNotificationEvent;
 }
 
@@ -60,11 +71,29 @@ class NotificationServiceManager {
   private isConnected = false;
   private reconnectTimeout: any = null;
   private isMuted = false;
+  private currentUser: ActiveUserContext | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
       this.connect();
     }
+  }
+
+  public setCurrentUser(user: ActiveUserContext | null) {
+    this.currentUser = user;
+    // Broadcast status sync to trigger UI update
+    this.broadcastToListeners({
+      type: 'STOCK_UPDATED',
+      data: {
+        productId: 'sync',
+        stockQuantity: 0,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  public getCurrentUser(): ActiveUserContext | null {
+    return this.currentUser;
   }
 
   public connect() {
@@ -118,11 +147,16 @@ class NotificationServiceManager {
   }
 
   private handleIncomingEvent(event: LiveNotificationEvent) {
+    const role = this.currentUser?.role || 'ADMIN';
     let title = '';
     let message = '';
+    let targetTab: string | undefined = undefined;
+    let targetOrderId: string | undefined = undefined;
+    let roleRelevance: 'ADMIN' | 'SALESMAN' | 'RETAILER' | 'ALL' = 'ALL';
 
     if (event.type === 'ORDER_CREATED') {
       const o = event.data;
+      targetOrderId = o.id || o.orderNumber;
       const via =
         o.createdVia === 'SALESMAN_APP'
           ? `Beat Salesman ${o.salesmanName || 'Field Agent'}`
@@ -130,19 +164,74 @@ class NotificationServiceManager {
           ? 'AI WhatsApp Pad'
           : 'Retailer Portal';
 
-      title = `New Order: ${o.orderNumber}`;
-      message = `${o.shopName} placed ₹${o.finalAmount.toFixed(0)} (${o.itemsCount} items) via ${via}`;
+      if (role === 'RETAILER') {
+        const isMyOrder = !this.currentUser?.retailerId || o.retailerId === this.currentUser.retailerId;
+        title = isMyOrder ? `Order Placed: #${o.orderNumber}` : `Hub Order: #${o.orderNumber}`;
+        message = isMyOrder
+          ? `Your order of ₹${o.finalAmount.toFixed(0)} (${o.itemsCount} items) has been received by Jabalpur Hub.`
+          : `${o.shopName} placed ₹${o.finalAmount.toFixed(0)} via ${via}`;
+        targetTab = 'my-orders';
+        roleRelevance = 'RETAILER';
+      } else if (role === 'SALESMAN') {
+        title = `Beat Order Punched: #${o.orderNumber}`;
+        message = `${o.shopName} placed ₹${o.finalAmount.toFixed(0)} (${o.itemsCount} SKUs). Daily beat target updated!`;
+        targetTab = 'beat';
+        roleRelevance = 'SALESMAN';
+      } else {
+        // ADMIN
+        const isHold = o.creditStatus === 'HOLD';
+        title = isHold ? `⚠️ Credit Hold: #${o.orderNumber}` : `New Order: #${o.orderNumber}`;
+        message = `${o.shopName} placed ₹${o.finalAmount.toFixed(0)} (${o.itemsCount} items) via ${via}. Status: ${o.creditStatus}`;
+        targetTab = 'orders';
+        roleRelevance = 'ADMIN';
+      }
 
-      // Play chime
       this.playOrderChime();
     } else if (event.type === 'ORDER_STATUS_CHANGED') {
       const o = event.data;
-      title = `Order ${o.status}: ${o.orderNumber}`;
-      message = `${o.shopName} - ₹${o.finalAmount.toFixed(0)} is now ${o.status}`;
+      targetOrderId = o.id || o.orderNumber;
+      const statusIcons: Record<string, string> = {
+        APPROVED: '✅ Approved',
+        DISPATCHED: '🚚 Dispatched',
+        DELIVERED: '📦 Delivered',
+        REJECTED: '❌ Rejected',
+      };
+      const statusLabel = statusIcons[o.status] || o.status;
+
+      if (role === 'RETAILER') {
+        title = `Order Status: ${statusLabel}`;
+        message = `Your order #${o.orderNumber} (₹${o.finalAmount.toFixed(0)}) is now marked as ${o.status}.`;
+        targetTab = 'my-orders';
+        roleRelevance = 'RETAILER';
+      } else if (role === 'SALESMAN') {
+        title = `Beat Update: #${o.orderNumber} ${statusLabel}`;
+        message = `${o.shopName} order of ₹${o.finalAmount.toFixed(0)} is now ${o.status}.`;
+        targetTab = 'beat';
+        roleRelevance = 'SALESMAN';
+      } else {
+        title = `Order ${statusLabel}: #${o.orderNumber}`;
+        message = `${o.shopName} - ₹${o.finalAmount.toFixed(0)} is now ${o.status}`;
+        targetTab = 'orders';
+        roleRelevance = 'ADMIN';
+      }
     } else if (event.type === 'STOCK_UPDATED') {
       const s = event.data;
-      title = `Stock Updated: ${s.skuCode || 'Product'}`;
-      message = `Warehouse inventory adjusted to ${s.stockQuantity} boxes`;
+      if (role === 'RETAILER') {
+        title = `Restock Alert: ${s.skuCode || 'Product'}`;
+        message = `Fresh inventory arrived at Jabalpur Hub (${s.stockQuantity} boxes available). Tap to order!`;
+        targetTab = 'shop';
+        roleRelevance = 'RETAILER';
+      } else if (role === 'SALESMAN') {
+        title = `Warehouse Stock: ${s.skuCode || 'Product'}`;
+        message = `Available inventory for your beat: ${s.stockQuantity} boxes`;
+        targetTab = 'catalogue';
+        roleRelevance = 'SALESMAN';
+      } else {
+        title = `Stock Adjusted: ${s.skuCode || 'Product'}`;
+        message = `Warehouse inventory adjusted to ${s.stockQuantity} boxes`;
+        targetTab = 'catalogue';
+        roleRelevance = 'ADMIN';
+      }
     }
 
     const stored: StoredNotification = {
@@ -152,6 +241,9 @@ class NotificationServiceManager {
       message,
       timestamp: new Date().toISOString(),
       read: false,
+      targetTab,
+      targetOrderId,
+      roleRelevance,
       rawEvent: event,
     };
 
@@ -160,7 +252,10 @@ class NotificationServiceManager {
       this.notifications.pop();
     }
 
-    // Broadcast to React component listeners
+    this.broadcastToListeners(event);
+  }
+
+  private broadcastToListeners(event: LiveNotificationEvent) {
     this.listeners.forEach((listener) => {
       try {
         listener(event);
@@ -185,16 +280,25 @@ class NotificationServiceManager {
     this.statusListeners.forEach((l) => l(connected));
   }
 
-  public getNotifications(): StoredNotification[] {
-    return [...this.notifications];
+  public getNotifications(forRole?: 'ADMIN' | 'SALESMAN' | 'RETAILER'): StoredNotification[] {
+    const role = forRole || this.currentUser?.role;
+    if (!role) return [...this.notifications];
+    return this.notifications.filter(
+      (n) => !n.roleRelevance || n.roleRelevance === 'ALL' || n.roleRelevance === role
+    );
   }
 
-  public getUnreadCount(): number {
-    return this.notifications.filter((n) => !n.read).length;
+  public getUnreadCount(forRole?: 'ADMIN' | 'SALESMAN' | 'RETAILER'): number {
+    return this.getNotifications(forRole).filter((n) => !n.read).length;
   }
 
-  public markAllAsRead() {
-    this.notifications.forEach((n) => (n.read = true));
+  public markAllAsRead(forRole?: 'ADMIN' | 'SALESMAN' | 'RETAILER') {
+    const role = forRole || this.currentUser?.role;
+    this.notifications.forEach((n) => {
+      if (!role || !n.roleRelevance || n.roleRelevance === 'ALL' || n.roleRelevance === role) {
+        n.read = true;
+      }
+    });
   }
 
   public markAsRead(id: string) {

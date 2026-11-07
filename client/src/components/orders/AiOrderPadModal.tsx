@@ -19,9 +19,6 @@ import {
   FileText,
   Volume2,
   Info,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
   Image as ImageIcon,
   Check,
 } from 'lucide-react';
@@ -55,7 +52,6 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
 
   // AI Diagnostic State
   const [aiStatus, setAiStatus] = useState<AiStatusResponse | null>(null);
-  const [showConfigGuide, setShowConfigGuide] = useState(false);
 
   // Text Tab State
   const [message, setMessage] = useState('');
@@ -371,53 +367,6 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
               <X className="w-5 h-5" />
             </button>
           </div>
-
-          {/* AI Status / Transparency Notification Bar */}
-          <div className="px-4 sm:px-6 py-2.5 bg-slate-50 dark:bg-[#161a23] border-b border-slate-100 dark:border-[#222736] flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500 dark:text-slate-400">AI Model Status:</span>
-              {aiStatus?.isGeminiConfigured ? (
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Gemini 2.5 Flash Vision Connected
-                </span>
-              ) : (
-                <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  Local FMCG Parser (GEMINI_API_KEY optional)
-                </span>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowConfigGuide(!showConfigGuide)}
-              className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-            >
-              <span>{showConfigGuide ? 'Hide Gemini Setup Guide' : 'How Gemini API Key Works'}</span>
-              {showConfigGuide ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
-          </div>
-
-          {/* Collapsible Gemini Setup Guide */}
-          {showConfigGuide && (
-            <div className="px-4 sm:px-6 py-3.5 bg-emerald-50/60 dark:bg-emerald-950/20 border-b border-emerald-100 dark:border-emerald-900/30 text-xs text-slate-700 dark:text-slate-300 space-y-2">
-              <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
-                <Info className="w-4 h-4 text-emerald-600" />
-                <span>Gemini API Key Configuration & Transparency</span>
-              </div>
-              <p className="leading-relaxed">
-                SupplySetu is designed with a <strong>dual-engine architecture</strong>. By default, it operates flawlessly using a local Kirana NLP heuristic parser with zero API keys required. When you configure your key, it unlocks Google&apos;s multimodal <strong>Gemini 2.5 Flash Vision</strong> for live handwritten slip recognition.
-              </p>
-              <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-emerald-200/60 dark:border-emerald-800/40 font-mono text-[11px] text-slate-800 dark:text-slate-200">
-                # Add to SupplySetu/server/.env<br />
-                GEMINI_API_KEY=&quot;your_gemini_api_key_from_google_ai_studio&quot;
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Get a free API key at <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-emerald-600 underline inline-flex items-center gap-0.5">aistudio.google.com <ExternalLink className="w-2.5 h-2.5" /></a>. Once added, restart the backend server to activate live vision.
-              </p>
-            </div>
-          )}
 
           {/* Multimodal Mode Selector Tabs */}
           <div className="flex border-b border-slate-200 dark:border-[#222736] px-4 sm:px-6 bg-white dark:bg-[#12151c]">
