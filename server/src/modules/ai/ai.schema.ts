@@ -69,4 +69,6 @@ export interface ValidatedAiOrderCaptureResult {
   totalUnitsCount: number;
   hasStockWarnings: boolean;
   hasLowConfidenceItems: boolean;
+  engineUsed?: 'GEMINI_2_5_FLASH' | 'LOCAL_FMCG_PARSER';
+  captureMode?: 'TEXT' | 'PARCHI_VISION' | 'VOICE';
 }

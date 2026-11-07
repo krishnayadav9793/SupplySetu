@@ -4,6 +4,7 @@
  */
 
 import { PricingService } from '../modules/pricing/pricing.service';
+import { AiOrderCaptureService } from '../modules/ai/ai.service';
 import { PriceTier } from '@prisma/client';
 
 interface TestResult {
@@ -208,7 +209,47 @@ export async function runAllTests() {
     }
   });
 
-  // 6. PRINT SUMMARY REPORT
+  // 6. MULTIMODAL AI & TRANSPARENCY TESTS
+  await runTest('Multimodal AI', 'Diagnostic status check returns valid model & engine', async () => {
+    const status = AiOrderCaptureService.getAiStatus();
+    assert(typeof status.isGeminiConfigured === 'boolean', 'isGeminiConfigured must be boolean');
+    assert(status.model.includes('flash'), 'Model must be a flash model');
+    assert(status.supportedFeatures.includes('handwritten_parchi_vision'), 'Must support handwritten parchi vision');
+    assert(typeof status.guidanceMessage === 'string' && status.guidanceMessage.length > 0, 'Must have guidance message');
+  });
+
+  await runTest('Multimodal AI', 'Parchi slip photo multimodal processing produces validated cart items', async () => {
+    const dummySvgData = 'data:image/svg+xml;utf8,<svg></svg>';
+    const result = await AiOrderCaptureService.processMultimodalOrder({
+      imageBase64: dummySvgData,
+      mimeType: 'image/svg+xml',
+      textNotes: 'Urgent order for kal subah',
+    });
+
+    assert(result.items.length > 0, 'Must extract at least one catalogue item from parchi slip');
+    assertEqual(result.captureMode, 'PARCHI_VISION', 'Capture mode must be tagged PARCHI_VISION');
+    assert(result.totalEstimatedAmount > 0, 'Estimated amount must be calculated');
+    for (const item of result.items) {
+      assert(item.unitPrice > 0, `Unit price for ${item.sku} must be > 0`);
+      assert(item.itemTotal > 0, `Item total for ${item.sku} must be > 0`);
+      assert(typeof item.stockAvailable === 'number', `Stock available must be defined`);
+    }
+  });
+
+  await runTest('Multimodal AI', 'AI Safety Rule: Non-catalogue items must never be hallucinated as SKUs', async () => {
+    const result = await AiOrderCaptureService.processOrderMessage(
+      'bhaiya 10 peti random_nonexistent_brand_xyz 99kg loose wheat bhejo'
+    );
+    // Non-catalogue tokens must land in unrecognizedItems
+    assert(
+      result.unrecognizedItems.length > 0,
+      'Non-catalogue items must be safely listed in unrecognizedItems'
+    );
+    const hasHallucinated = result.items.some((i) => i.sku.includes('random_nonexistent'));
+    assertEqual(hasHallucinated, false, 'System must NEVER hallucinate or invent non-existent SKUs');
+  });
+
+  // 7. PRINT SUMMARY REPORT
   console.log('----------------------------------------------------');
   let passedCount = 0;
   for (const r of results) {
@@ -229,8 +270,16 @@ export async function runAllTests() {
 
 // Execute when invoked directly
 if (require.main === module || !module.parent) {
-  runAllTests().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+  runAllTests()
+    .then(async () => {
+      const { prisma } = await import('../config');
+      await prisma.$disconnect();
+      process.exit(0);
+    })
+    .catch(async (e) => {
+      console.error(e);
+      const { prisma } = await import('../config');
+      await prisma.$disconnect();
+      process.exit(1);
+    });
 }

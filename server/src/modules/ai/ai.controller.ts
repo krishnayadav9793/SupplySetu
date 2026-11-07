@@ -24,6 +24,20 @@ export class AiOrderCaptureController {
     return PriceTier.STANDARD;
   }
 
+  /**
+   * Get diagnostic status of Gemini AI configuration and active models
+   */
+  static async getStatus(req: AuthenticatedRequest, res: Response) {
+    const status = AiOrderCaptureService.getAiStatus();
+    res.status(200).json({
+      success: true,
+      data: status,
+    });
+  }
+
+  /**
+   * Standard text message AI order capture (WhatsApp / SMS)
+   */
   static async captureOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const { message } = req.body;
@@ -47,8 +61,40 @@ export class AiOrderCaptureController {
     }
   }
 
+  /**
+   * Multimodal AI order capture (Handwritten paper slip / invoice photo + optional voice notes)
+   */
+  static async captureMultimodalOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { imageBase64, mimeType, textNotes } = req.body;
+
+      if (!imageBase64 && (!textNotes || !textNotes.trim())) {
+        res.status(400).json({
+          success: false,
+          message: 'Either an image (base64) or transcribed text notes must be provided.',
+        });
+        return;
+      }
+
+      const tier = await AiOrderCaptureController.resolvePriceTier(req);
+      const result = await AiOrderCaptureService.processMultimodalOrder(
+        { imageBase64, mimeType, textNotes },
+        tier
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Quick demonstration samples
+   */
   static async getSamplePrompts(req: AuthenticatedRequest, res: Response) {
-    // Convenient sample Kirana messages for quick testing and demonstration
     const samples = [
       {
         title: 'Kirana Morning Rush',
