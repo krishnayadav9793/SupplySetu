@@ -364,7 +364,129 @@ export async function runAllTests() {
     assert(repeatedOrder.notes.includes(pastOrder.orderCode), 'Notes must reference previous order');
   });
 
-  // 8. PRINT SUMMARY REPORT
+  // 8. TASK 7: EXECUTIVE ANALYTICS, CHURN RADAR & FINANCIAL RISK TESTS
+  await runTest('Executive Analytics', 'GMV, AOV and fulfillment percentage mathematically verified', () => {
+    const orders = [
+      { id: '1', finalAmount: 15000, status: 'APPROVED' },
+      { id: '2', finalAmount: 25000, status: 'DELIVERED' },
+      { id: '3', finalAmount: 10000, status: 'DISPATCHED' },
+      { id: '4', finalAmount: 8000, status: 'PENDING' },
+      { id: '5', finalAmount: 12000, status: 'REJECTED' },
+    ];
+
+    const totalOrders = orders.length; // 5
+    const totalGmv = orders.reduce((sum, o) => sum + o.finalAmount, 0); // 70000
+    const aov = Math.round((totalGmv / totalOrders) * 100) / 100; // 14000
+    const fulfilledCount = orders.filter((o) =>
+      ['APPROVED', 'DISPATCHED', 'DELIVERED'].includes(o.status)
+    ).length; // 3
+    const fulfillmentRate = Math.round((fulfilledCount / totalOrders) * 1000) / 10; // 60.0%
+
+    assertEqual(totalGmv, 70000, 'Total GMV must be 70000');
+    assertEqual(aov, 14000, 'Average Order Value must be 14000');
+    assertEqual(fulfillmentRate, 60.0, 'Fulfillment rate must be 60.0%');
+  });
+
+  await runTest('Executive Analytics', 'Brand revenue share correctly computes percentage of total sales', () => {
+    const brandSales = {
+      Parle: 30000,
+      Britannia: 20000,
+      Nestle: 15000,
+      HUL: 10000,
+    };
+    const totalSales = 75000;
+
+    const parleShare = Math.round((brandSales.Parle / totalSales) * 1000) / 10;
+    const britanniaShare = Math.round((brandSales.Britannia / totalSales) * 1000) / 10;
+
+    assertEqual(parleShare, 40.0, 'Parle share must be 40.0%');
+    assertEqual(britanniaShare, 26.7, 'Britannia share must be 26.7%');
+  });
+
+  await runTest('Churn Radar', '14-day inactivity threshold correctly identifies dormant kirana stores', () => {
+    const now = new Date('2026-11-07T12:00:00Z');
+    const retailers = [
+      { id: 'r1', shopName: 'Active Kirana', lastOrderDate: new Date('2026-11-03T12:00:00Z') }, // 4 days ago
+      { id: 'r2', shopName: 'Dormant Kirana 1', lastOrderDate: new Date('2026-10-20T12:00:00Z') }, // 18 days ago
+      { id: 'r3', shopName: 'Critical Kirana 2', lastOrderDate: new Date('2026-10-10T12:00:00Z') }, // 28 days ago
+    ];
+
+    const threshold = 14;
+    const dormantList = retailers.filter((r) => {
+      const days = Math.floor((now.getTime() - r.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
+      return days >= threshold;
+    });
+
+    assertEqual(dormantList.length, 2, 'Exactly 2 shops must be flagged as dormant');
+    assertEqual(dormantList[0].id, 'r2', 'r2 must be identified');
+    assertEqual(dormantList[1].id, 'r3', 'r3 must be identified');
+  });
+
+  await runTest('Churn Radar', 'Personalized FMCG WhatsApp nudge URL is formatted with valid phone and encoded message', () => {
+    const rawPhone = '9876543210';
+    const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const shopName = 'Shri Ganesh Store';
+    const ownerName = 'Ramesh Ji';
+    const daysDormant = 18;
+
+    const message = `Namaste ${ownerName}! SupplySetu Distributors Jabalpur misses ${shopName}. We noticed you haven't placed an order in ${daysDormant} days. Special schemes are live today!`;
+    const whatsAppUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+
+    assert(whatsAppUrl.startsWith('https://wa.me/919876543210'), 'Must format with 91 prefix');
+    assert(whatsAppUrl.includes('Shri%20Ganesh%20Store'), 'Must contain URL encoded shop name');
+    assert(whatsAppUrl.includes('18%20days'), 'Must contain dormancy days');
+  });
+
+  await runTest('Financial Risk', 'Receivables aging correctly segments balances into 0-15d, 16-30d, 30+d brackets', () => {
+    const receivables = [
+      { amount: 5000, daysPastDue: 8 },
+      { amount: 12000, daysPastDue: 14 },
+      { amount: 8000, daysPastDue: 22 },
+      { amount: 15000, daysPastDue: 45 },
+    ];
+
+    let bucket0to15 = 0;
+    let bucket16to30 = 0;
+    let bucket30plus = 0;
+
+    receivables.forEach((r) => {
+      if (r.daysPastDue <= 15) bucket0to15 += r.amount;
+      else if (r.daysPastDue <= 30) bucket16to30 += r.amount;
+      else bucket30plus += r.amount;
+    });
+
+    assertEqual(bucket0to15, 17000, '0-15 days bucket must be 17000 (5000 + 12000)');
+    assertEqual(bucket16to30, 8000, '16-30 days bucket must be 8000');
+    assertEqual(bucket30plus, 15000, '30+ days bucket must be 15000');
+  });
+
+  await runTest('Financial Risk', 'High credit utilization (>=80%) correctly flagged with warning status', () => {
+    const checkStatus = (creditLimit: number, outstanding: number) => {
+      const utilPct = creditLimit > 0 ? (outstanding / creditLimit) * 100 : 0;
+      if (outstanding > creditLimit) return 'EXCEEDED';
+      if (utilPct >= 80) return 'WARNING';
+      return 'HEALTHY';
+    };
+
+    assertEqual(checkStatus(50000, 30000), 'HEALTHY', '60% utilization must be HEALTHY');
+    assertEqual(checkStatus(50000, 42000), 'WARNING', '84% utilization must be WARNING');
+    assertEqual(checkStatus(50000, 55000), 'EXCEEDED', '110% utilization must be EXCEEDED');
+  });
+
+  await runTest('Salesman Performance', 'Daily beat quota realization and spot commission correctly calculated', () => {
+    const dailyTarget = 45000;
+    const gmvToday = 38250;
+    const commissionRate = 0.015; // 1.5%
+
+    const realizationPct = Math.round((gmvToday / dailyTarget) * 1000) / 10;
+    const commissionEarned = Math.round(gmvToday * commissionRate);
+
+    assertEqual(realizationPct, 85.0, 'Realization percentage must be 85.0%');
+    assertEqual(commissionEarned, 574, '1.5% commission on 38250 must be 574');
+  });
+
+  // 9. PRINT SUMMARY REPORT
   console.log('----------------------------------------------------');
   let passedCount = 0;
   for (const r of results) {

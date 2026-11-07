@@ -9,6 +9,7 @@ import orderRoutes from './modules/orders/orders.routes';
 import exportRoutes from './modules/exports/exports.routes';
 import salesmenRoutes from './modules/salesmen/salesmen.routes';
 import notificationRoutes from './modules/notifications/notifications.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/exports', exportRoutes);
 app.use('/api/salesmen', salesmenRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
