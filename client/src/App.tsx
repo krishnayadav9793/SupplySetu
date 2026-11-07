@@ -43,7 +43,12 @@ function DashboardContent() {
               setCurrentTab={setCurrentTab}
             />
           )}
-          {role === 'SALESMAN' && <SalesmanDashboard />}
+          {role === 'SALESMAN' && (
+            <SalesmanDashboard
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+            />
+          )}
           {role === 'RETAILER' && (
             <RetailerDashboard
               currentTab={currentTab}

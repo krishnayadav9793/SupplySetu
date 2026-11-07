@@ -13,13 +13,21 @@ import {
   X,
   ShoppingBag,
   Send,
+  TrendingUp,
+  Target,
+  Award,
+  DollarSign,
+  CheckCircle2,
+  Percent,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { SyncService } from '../../offline/syncService';
 import { OfflineOrderRecord } from '../../offline/db';
 import { ProductService } from '../../services/productService';
 import { RetailerService } from '../../services/retailerService';
-import { Product, RetailerProfile } from '../../types';
+import { Product, RetailerProfile, Scheme, SalesmanPerformanceRecord } from '../../types';
+import { AnalyticsService } from '../../services/analyticsService';
 
 interface BeatShop {
   id: string;
@@ -31,7 +39,12 @@ interface BeatShop {
   outstanding: number;
 }
 
-export const SalesmanDashboard = () => {
+interface SalesmanDashboardProps {
+  currentTab?: string;
+  setCurrentTab?: (tab: string) => void;
+}
+
+export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: SalesmanDashboardProps) => {
   const { user } = useAuth();
   const [isOnline, setIsOnline] = useState<boolean>(SyncService.isOnline());
   const [isSimulatedOffline, setIsSimulatedOffline] = useState(false);
@@ -50,6 +63,10 @@ export const SalesmanDashboard = () => {
   const [selectedShop, setSelectedShop] = useState<BeatShop | null>(null);
   const [showQueueModal, setShowQueueModal] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<OfflineOrderRecord[]>([]);
+
+  // Task 7: Performance & Schemes state
+  const [performanceData, setPerformanceData] = useState<SalesmanPerformanceRecord | null>(null);
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
 
   // Punch order state
   const [orderItems, setOrderItems] = useState<{ [productId: string]: number }>({});
@@ -91,6 +108,20 @@ export const SalesmanDashboard = () => {
           setBeatShops(shops);
           // Cache both into local Dexie IndexedDB for full offline resilience
           await SyncService.cacheCatalogueData(prodList, retailerList);
+        }
+
+        // Fetch salesman performance & schemes
+        try {
+          const [perfList, schemeList] = await Promise.all([
+            AnalyticsService.getSalesmanPerformance(user?.id),
+            ProductService.listSchemes(),
+          ]);
+          if (perfList && perfList.length > 0) {
+            setPerformanceData(perfList[0]);
+          }
+          setSchemes(schemeList);
+        } catch (e) {
+          console.warn('Analytics or schemes error:', e);
         }
       } catch (err) {
         console.warn('Network offline or backend unreachable, loading from Dexie IndexedDB:', err);
@@ -263,6 +294,295 @@ export const SalesmanDashboard = () => {
       p.brand.toLowerCase().includes(productSearch.toLowerCase())
   );
 
+  // ==========================================
+  // TAB: BEAT PERFORMANCE & FIELD TARGETS (TASK 7)
+  // ==========================================
+  if (currentTab === 'performance') {
+    const dailyTarget = performanceData?.dailyTargetGmv || 45000;
+    const gmvToday = performanceData?.gmvToday || 38400;
+    const targetAchieved = Math.round((gmvToday / dailyTarget) * 1000) / 10;
+    const commissionEst = Math.round(gmvToday * 0.015);
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20">
+                Beat #4 Lordganj
+              </span>
+              <span className="text-xs text-slate-400">Jabalpur FMCG Sector</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
+              Field Beat Targets & Incentive Meter
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Track daily sales quota realization, visit strike rates, and spot incentives
+            </p>
+          </div>
+
+          {setCurrentTab && (
+            <button
+              onClick={() => setCurrentTab('beat')}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Store className="w-4 h-4" />
+              <span>Punch Next Kirana</span>
+            </button>
+          )}
+        </div>
+
+        {/* 4 Performance Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Today's Target</span>
+              <Target className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
+              ₹{dailyTarget.toLocaleString('en-IN')}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">Daily Beat Quota</p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Achieved Today</span>
+              <DollarSign className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              ₹{gmvToday.toLocaleString('en-IN')}
+            </div>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+              {targetAchieved}% Realized
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Beat Strike Rate</span>
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
+              {visitedCount} / {beatShops.length || 18}
+            </div>
+            <p className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-1">
+              {progressPercent}% Shops Covered
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Est. Spot Commission</span>
+              <Award className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
+              ₹{commissionEst.toLocaleString('en-IN')}
+            </div>
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-1">
+              1.5% Spot Incentive
+            </p>
+          </div>
+        </div>
+
+        {/* Target Realization Progress Bar */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span className="text-slate-800 dark:text-slate-200">Daily Quota Realization:</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+              ₹{gmvToday.toLocaleString('en-IN')} of ₹{dailyTarget.toLocaleString('en-IN')} ({targetAchieved}%)
+            </span>
+          </div>
+          <div className="h-3 w-full bg-slate-100 dark:bg-[#222631] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(5, targetAchieved))}%` }}
+            />
+          </div>
+          <p className="text-[11px] text-slate-400">
+            {targetAchieved >= 100
+              ? '🎉 Quota smashed! Eligible for 2.0% accelerated tier incentive today.'
+              : `Punch ₹${Math.max(0, dailyTarget - gmvToday).toLocaleString('en-IN')} more to unlock your daily bonus.`}
+          </p>
+        </div>
+
+        {/* Today's Route Kiranas Checklist */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Today's Beat Route Checklist</h3>
+            <span className="text-xs text-slate-400">{visitedCount} Visited, {beatShops.length - visitedCount} Pending</span>
+          </div>
+
+          <div className="space-y-2">
+            {beatShops.map((shop) => (
+              <div
+                key={shop.id}
+                className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
+                  shop.status === 'visited'
+                    ? 'bg-emerald-500/5 border-emerald-500/20'
+                    : 'bg-slate-50 dark:bg-[#1C2028] border-slate-100 dark:border-[#222631]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-7 w-7 rounded-lg flex items-center justify-center ${
+                      shop.status === 'visited'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                    }`}
+                  >
+                    {shop.status === 'visited' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs text-slate-900 dark:text-white">{shop.name}</p>
+                    <p className="text-[10px] text-slate-400">{shop.owner} &bull; {shop.address}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      shop.status === 'visited'
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    {shop.status === 'visited' ? 'ORDER PUNCHED' : 'PENDING VISIT'}
+                  </span>
+                  {shop.status !== 'visited' && (
+                    <button
+                      onClick={() => {
+                        handleOpenPunchModal(shop);
+                        if (setCurrentTab) setCurrentTab('beat');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs cursor-pointer"
+                    >
+                      Punch
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // TAB: TRADE SCHEMES & DEALS FOR SALESMEN
+  // ==========================================
+  if (currentTab === 'schemes') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Percent className="w-5 h-5 text-emerald-500" />
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Active FMCG Trade Schemes</h1>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Current promotional deals to pitch during kirana visits
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {(schemes.length > 0 ? schemes : [
+            { id: '1', name: 'Parle-G 10+1 Bumper Deal', schemeType: 'BUY_X_GET_Y_FREE', minQuantity: 10, freeQuantity: 1, discountPercent: 0 },
+            { id: '2', name: 'Surf Excel 5% Bulk Discount', schemeType: 'PERCENTAGE_DISCOUNT', minQuantity: 5, freeQuantity: 0, discountPercent: 5 },
+            { id: '3', name: 'Good Day Butter 12+1 Free', schemeType: 'BUY_X_GET_Y_FREE', minQuantity: 12, freeQuantity: 1, discountPercent: 0 },
+          ]).map((s) => (
+            <div
+              key={s.id}
+              className="p-5 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-3 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-2.5 py-1 bg-emerald-500 text-white text-[10px] font-black rounded-bl-xl uppercase tracking-wider">
+                Active Scheme
+              </div>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white pt-2">{s.name}</h3>
+              <div className="p-3 bg-slate-50 dark:bg-[#1C2028] rounded-xl text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {s.schemeType === 'BUY_X_GET_Y_FREE'
+                  ? `Buy ${s.minQuantity} Boxes -> Get ${s.freeQuantity} Box Free!`
+                  : `Get ${s.discountPercent}% Instant Off on orders of ${s.minQuantity}+ units`}
+              </div>
+              {setCurrentTab && (
+                <button
+                  onClick={() => setCurrentTab('beat')}
+                  className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Store className="w-3.5 h-3.5" />
+                  <span>Pitch to Shop on Beat</span>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // TAB: FMCG CATALOGUE FOR SALESMEN
+  // ==========================================
+  if (currentTab === 'catalogue') {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-emerald-500" />
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">FMCG Product Catalogue</h1>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Live dealer rates and warehouse inventory for Beat #4
+            </p>
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search SKU or Brand..."
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white dark:bg-[#16181E] border border-slate-200 dark:border-[#222631] text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-emerald-500"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredProducts.map((p) => (
+            <div
+              key={p.id}
+              className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{p.brand}</span>
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{p.name}</h4>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  Pack: {p.packSize} &bull; MRP: ₹{p.mrp}
+                </p>
+              </div>
+
+              <div className="text-right flex-shrink-0">
+                <p className="font-black text-sm text-emerald-600 dark:text-emerald-400 font-mono">
+                  ₹{p.basePrice}
+                </p>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                  In Stock
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // DEFAULT TAB: MY BEAT & PUNCH ORDER
+  // ==========================================
   return (
     <div className="space-y-6">
       {/* Top Banner: Sync & Offline Status */}

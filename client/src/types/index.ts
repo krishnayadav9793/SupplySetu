@@ -280,3 +280,109 @@ export interface RecordPaymentInput {
   referenceNo?: string;
   notes?: string;
 }
+
+// ----------------------------------------------------
+// EXECUTIVE ANALYTICS, CHURN RADAR & FINANCIAL RISK (TASK 7)
+// ----------------------------------------------------
+
+export interface BrandContribution {
+  brand: string;
+  revenue: number;
+  ordersCount: number;
+  percentage: number;
+}
+
+export interface CategoryContribution {
+  category: string;
+  revenue: number;
+  percentage: number;
+}
+
+export interface TopRetailer {
+  id: string;
+  shopName: string;
+  ownerName: string;
+  phone: string;
+  city: string;
+  totalOrders: number;
+  totalSpent: number;
+  creditLimit: number;
+  outstandingBalance: number;
+}
+
+export interface ExecutiveAnalyticsData {
+  kpi: {
+    totalOrders: number;
+    totalGmv: number;
+    todayOrdersCount: number;
+    todayGmv: number;
+    aov: number;
+    fulfillmentRate: number;
+    activeRetailersCount: number;
+  };
+  statusDistribution: Record<string, number>;
+  brandBreakdown: BrandContribution[];
+  categoryBreakdown: CategoryContribution[];
+  topRetailers: TopRetailer[];
+}
+
+export interface InactiveRetailerRecord {
+  id: string;
+  shopName: string;
+  ownerName: string;
+  phone: string;
+  city: string;
+  daysDormant: number;
+  lastOrderDate: string | null;
+  lastOrderAmount: number | null;
+  totalHistoricalOrders: number;
+  riskLevel: 'HIGH' | 'MEDIUM';
+  salesmanId: string | null;
+  salesmanName: string | null;
+  suggestedWhatsAppMessage: string;
+  whatsAppUrl: string;
+}
+
+export interface HighRiskCreditRetailer {
+  id: string;
+  shopName: string;
+  ownerName: string;
+  phone: string;
+  creditLimit: number;
+  outstandingBalance: number;
+  utilizationPct: number;
+  status: 'EXCEEDED' | 'WARNING' | 'HEALTHY';
+  whatsappReminderUrl: string;
+}
+
+export interface FinancialRiskData {
+  summary: {
+    totalCreditExtended: number;
+    totalOutstanding: number;
+    availableCreditNetwork: number;
+    overallUtilizationPct: number;
+    overLimitRetailersCount: number;
+    warningRetailersCount: number;
+  };
+  aging: {
+    current0to15Days: number;
+    overdue16to30Days: number;
+    critical30PlusDays: number;
+  };
+  highRiskRetailers: HighRiskCreditRetailer[];
+}
+
+export interface SalesmanPerformanceRecord {
+  id: string;
+  name: string;
+  phone: string;
+  assignedShopsCount: number;
+  ordersTodayCount: number;
+  gmvToday: number;
+  dailyTargetGmv: number;
+  targetAchievementPct: number;
+  strikeRatePct: number;
+  monthOrdersCount: number;
+  monthGmv: number;
+}
+
