@@ -6,6 +6,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { SalesmanDashboard } from './pages/salesman/SalesmanDashboard';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { AuthPage } from './pages/auth/AuthPage';
 import { Role } from './types';
@@ -108,10 +109,12 @@ function DashboardContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <DashboardContent />
-      </CartProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <DashboardContent />
+        </CartProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

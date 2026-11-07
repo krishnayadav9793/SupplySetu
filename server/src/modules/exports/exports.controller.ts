@@ -18,6 +18,27 @@ export class ExportsController {
     }
   }
 
+  static async getVanLoadingList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const format = req.query.format as string;
+      const manifest = await ExportsService.generateVanLoadingList();
+
+      if (format === 'csv') {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${manifest.filename}"`);
+        res.status(200).send(manifest.csvContent);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: manifest,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getExportHistory(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const history = await ExportsService.getExportHistory();

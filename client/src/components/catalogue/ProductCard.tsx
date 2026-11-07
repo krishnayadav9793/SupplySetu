@@ -133,8 +133,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 MRP ₹{mrp.toLocaleString('en-IN')}
               </span>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              per {product.unit} (excl. {gstRate}% GST)
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              per {product.unit} (+{gstRate}% GST) · <span className="text-emerald-600 dark:text-emerald-400 font-semibold">₹{(rate * (1 + (gstRate || 0) / 100)).toFixed(2)} Incl. GST</span>
             </div>
           </div>
 

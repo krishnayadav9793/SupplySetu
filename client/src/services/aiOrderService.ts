@@ -12,6 +12,11 @@ export interface SampleParchi {
 
 export const SAMPLE_PROMPTS: SamplePrompt[] = [
   {
+    title: 'Benchmark Order (Problem Statement Sample)',
+    message: 'bhaiya 5 peti biscuit chhota, 2 peti washing powder 1 kilo, chai patti 250 wala 1 peti',
+    description: 'Exact benchmark order from Jabalpur problem statement (tests stock-out detection on tea)',
+  },
+  {
     title: 'Kirana Morning Rush',
     message: 'Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah',
     description: 'Fast-moving biscuits, instant noodles, and salt staple order',

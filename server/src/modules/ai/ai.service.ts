@@ -445,8 +445,20 @@ CRITICAL RULES:
     // Keyword match definitions for FMCG catalogue
     const rules = [
       {
+        sku: 'SKU-BS-075',
+        patterns: [/biscuit\s*chhot[ae]/i, /chhot[ae]\s*biscuit/i, /glucose\s*biscuit\s*75/i, /SKU-BS-075/i],
+      },
+      {
+        sku: 'SKU-DT-1KG',
+        patterns: [/washing\s*powder\s*(?:1\s*(?:kilo|kg))?/i, /detergent\s*(?:powder\s*)?1\s*(?:kilo|kg)/i, /SKU-DT-1KG/i],
+      },
+      {
+        sku: 'SKU-TE-250',
+        patterns: [/chai\s*patti\s*(?:250(?:\s*wala)?)?/i, /tea\s*(?:leaf\s*)?250/i, /SKU-TE-250/i, /chai\s*patti/i],
+      },
+      {
         sku: 'PARLE-G-80G',
-        patterns: [/parle[-\s]?g/i, /glucose/i, /chhot[ae]\s*biscuit/i, /biscuit\s*chhot[ae]/i],
+        patterns: [/parle[-\s]?g/i, /glucose/i],
       },
       {
         sku: 'BRIT-GOODDAY-100G',

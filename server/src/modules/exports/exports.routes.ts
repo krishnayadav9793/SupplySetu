@@ -7,6 +7,9 @@ const router = Router();
 // Download Tally-compatible CSV of approved orders
 router.get('/tally.csv', optionalAuthenticate, ExportsController.downloadTallyCsv);
 
+// Van Loading List (Dispatch & Warehouse Packing Manifest)
+router.get('/van-loading-list', optionalAuthenticate, ExportsController.getVanLoadingList);
+
 // Export batches history
 router.get('/history', optionalAuthenticate, ExportsController.getExportHistory);
 

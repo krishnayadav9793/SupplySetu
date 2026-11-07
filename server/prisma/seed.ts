@@ -203,6 +203,46 @@ async function main() {
       stock: 190,
       minOrderQty: 1,
     },
+    // Evaluation Benchmark Sample Data from Problem Statement
+    {
+      skuCode: 'SKU-BS-075',
+      name: 'Glucose biscuit 75 g, case of 96',
+      brand: 'Parle',
+      category: 'Biscuits & Cookies',
+      unit: 'CASE',
+      packSize: '96 Packs / Case',
+      mrp: 960.0,
+      basePrice: 777.6, // ₹8.10/unit
+      gstRate: 5.0,
+      stock: 340,
+      minOrderQty: 1,
+    },
+    {
+      skuCode: 'SKU-DT-1KG',
+      name: 'Detergent powder 1 kg, case of 20',
+      brand: 'Surf Excel',
+      category: 'Laundry & Fabric Care',
+      unit: 'CASE',
+      packSize: '20 Packs / Case',
+      mrp: 2400.0,
+      basePrice: 2030.0, // ₹101.50/unit
+      gstRate: 18.0,
+      stock: 85,
+      minOrderQty: 1,
+    },
+    {
+      skuCode: 'SKU-TE-250',
+      name: 'Tea leaf 250 g, case of 40',
+      brand: 'Tata Consumer',
+      category: 'Beverages & Tea',
+      unit: 'CASE',
+      packSize: '40 Packs / Case',
+      mrp: 5200.0,
+      basePrice: 4720.0, // ₹118.00/unit
+      gstRate: 5.0,
+      stock: 0, // Out of stock per problem statement
+      minOrderQty: 1,
+    },
   ];
 
   const createdProducts: Record<string, any> = {};
@@ -262,6 +302,34 @@ async function main() {
       freeQuantity: 0,
       discountPercent: 5.0,
       productId: createdProducts['SURF-EXCEL-500G'].id,
+      isActive: true,
+    },
+  });
+
+  // Problem Statement Benchmark Schemes:
+  // SKU-BS-075: Buy 10 cases get 1 free
+  await prisma.scheme.create({
+    data: {
+      name: 'Glucose Biscuit 75g (10+1 Free Dhamaka)',
+      schemeType: SchemeType.BUY_X_GET_Y_FREE,
+      minQuantity: 10,
+      freeQuantity: 1,
+      discountPercent: 0,
+      productId: createdProducts['SKU-BS-075'].id,
+      freeProductId: createdProducts['SKU-BS-075'].id,
+      isActive: true,
+    },
+  });
+
+  // SKU-DT-1KG: 3% off 5 or more cases
+  await prisma.scheme.create({
+    data: {
+      name: 'Detergent Powder 1kg (3% off 5+ Cases)',
+      schemeType: SchemeType.PERCENTAGE_DISCOUNT,
+      minQuantity: 5,
+      freeQuantity: 0,
+      discountPercent: 3.0,
+      productId: createdProducts['SKU-DT-1KG'].id,
       isActive: true,
     },
   });

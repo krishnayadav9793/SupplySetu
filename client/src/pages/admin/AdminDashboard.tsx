@@ -53,6 +53,7 @@ import {
 } from '../../types';
 import { OrderService } from '../../services/orderService';
 import { B2bTaxInvoiceModal } from '../../components/orders/B2bTaxInvoiceModal';
+import { VanLoadingModal } from '../../components/orders/VanLoadingModal';
 import { SalesmanService, SalesmanRecord } from '../../services/salesmanService';
 import { RetailerService } from '../../services/retailerService';
 import { ProductService } from '../../services/productService';
@@ -99,6 +100,55 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   const [isExporting, setIsExporting] = useState(false);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  // Van Loading Manifest State
+  const [isVanLoadingModalOpen, setIsVanLoadingModalOpen] = useState(false);
+  const [vanLoadingData, setVanLoadingData] = useState<any | null>(null);
+  const [loadingVanManifest, setLoadingVanManifest] = useState(false);
+
+  const handleOpenVanLoadingModal = async () => {
+    setIsVanLoadingModalOpen(true);
+    setLoadingVanManifest(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const token = localStorage.getItem('supplysetu-auth-token');
+      const res = await fetch(`${apiBase}/exports/van-loading-list`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) setVanLoadingData(json.data);
+      }
+    } catch (e) {
+      console.warn('Could not fetch van loading manifest:', e);
+    } finally {
+      setLoadingVanManifest(false);
+    }
+  };
+
+  const handleDownloadVanLoadingCsv = async () => {
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const token = localStorage.getItem('supplysetu-auth-token');
+      const res = await fetch(`${apiBase}/exports/van-loading-list?format=csv`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Failed to download Van Loading CSV');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `VAN_LOADING_MANIFEST_${new Date().toISOString().split('T')[0].replace(/-/g, '')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setActionSuccessMessage('Van Loading Manifest downloaded successfully!');
+      setTimeout(() => setActionSuccessMessage(null), 4000);
+    } catch (e) {
+      console.error('Van loading export error:', e);
+    }
+  };
 
   // ----------------------------------------------------
   // 2. STAFF & RETAILERS STATE
@@ -1444,14 +1494,24 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             </p>
           </div>
 
-          <button
-            onClick={handleExportTallyCsv}
-            disabled={isExporting}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-          >
-            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
-            <span>{isExporting ? 'Generating Batch...' : 'Download Tally Batch CSV'}</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleExportTallyCsv}
+              disabled={isExporting}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            >
+              <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+              <span>{isExporting ? 'Generating Batch...' : 'Download Tally Batch CSV'}</span>
+            </button>
+            <button
+              onClick={handleOpenVanLoadingModal}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+              title="Generate Vehicle Loading Manifest & Packing List"
+            >
+              <Truck className="w-4 h-4" />
+              <span>Van Loading Manifest</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -3221,19 +3281,27 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
         </div>
 
         <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] shadow-xs">
-          <p className="text-xs font-semibold text-slate-400">Tally ERP Batch Export</p>
-          <div className="mt-1 flex items-baseline justify-between">
-            <p className="text-2xl font-bold text-emerald-500">Ready</p>
+          <p className="text-xs font-semibold text-slate-400">Dispatch & Tally ERP Exports</p>
+          <div className="mt-1 flex items-center justify-between gap-1.5 flex-wrap">
             <button
               onClick={handleExportTallyCsv}
               disabled={isExporting}
-              className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+              className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+              title="Download Tally ERP 9 / Prime CSV Vouchers"
             >
               <FileSpreadsheet className={`h-3.5 w-3.5 ${isExporting ? 'animate-spin' : ''}`} />
-              <span>{isExporting ? 'Generating...' : 'Export CSV'}</span>
+              <span>{isExporting ? 'Generating...' : 'Tally CSV'}</span>
+            </button>
+            <button
+              onClick={handleOpenVanLoadingModal}
+              className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+              title="Generate Vehicle Loading Manifest & Packing List"
+            >
+              <Truck className="h-3.5 w-3.5" />
+              <span>Van Loading List</span>
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">{metrics.approvedOrders} Approved batches</p>
+          <p className="text-[11px] text-slate-400 mt-1">{metrics.approvedOrders} Approved orders ready for vehicle packing</p>
         </div>
       </div>
 
@@ -3737,6 +3805,15 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           setIsInvoiceModalOpen(false);
           setSelectedInvoiceOrder(null);
         }}
+      />
+
+      {/* Vehicle Dispatch & Van Loading Manifest Modal */}
+      <VanLoadingModal
+        isOpen={isVanLoadingModalOpen}
+        onClose={() => setIsVanLoadingModalOpen(false)}
+        manifestData={vanLoadingData}
+        loading={loadingVanManifest}
+        onDownloadCsv={handleDownloadVanLoadingCsv}
       />
     </div>
   );
