@@ -460,17 +460,106 @@ export class OrdersService {
   /**
    * Update order status to DISPATCHED
    */
-  static async dispatchOrder(id: string) {
-    const order = await prisma.order.findUnique({ where: { id } });
+  static async dispatchOrder(id: string, notes?: string) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { retailer: true },
+    });
     if (!order) throw new Error(`Order ${id} not found`);
 
     if (order.status !== OrderStatus.APPROVED) {
-      throw new Error('Only approved orders can be dispatched');
+      throw new Error(`Only approved orders can be dispatched. Current status: ${order.status}`);
     }
 
-    return prisma.order.update({
+    const updated = await prisma.order.update({
       where: { id },
-      data: { status: OrderStatus.DISPATCHED },
+      data: {
+        status: OrderStatus.DISPATCHED,
+        notes: notes ? `${order.notes || ''} [Dispatched: ${notes}]` : order.notes,
+      },
+      include: { retailer: true, items: { include: { product: true } } },
+    });
+
+    eventBus.broadcast({
+      type: 'ORDER_STATUS_CHANGED',
+      data: {
+        id: updated.id,
+        orderNumber: updated.orderNumber,
+        status: 'DISPATCHED',
+        shopName: updated.retailer.shopName,
+        finalAmount: updated.finalAmount,
+        reason: notes,
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Update order status to DELIVERED
+   */
+  static async deliverOrder(id: string, notes?: string) {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { retailer: true },
+    });
+    if (!order) throw new Error(`Order ${id} not found`);
+
+    if (order.status !== OrderStatus.DISPATCHED && order.status !== OrderStatus.APPROVED) {
+      throw new Error(`Order must be dispatched before it can be delivered. Current status: ${order.status}`);
+    }
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.DELIVERED,
+        notes: notes ? `${order.notes || ''} [Delivered: ${notes}]` : order.notes,
+      },
+      include: { retailer: true, items: { include: { product: true } } },
+    });
+
+    eventBus.broadcast({
+      type: 'ORDER_STATUS_CHANGED',
+      data: {
+        id: updated.id,
+        orderNumber: updated.orderNumber,
+        status: 'DELIVERED',
+        shopName: updated.retailer.shopName,
+        finalAmount: updated.finalAmount,
+        reason: notes,
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * 1-Click Repeat Order: Reorders the exact items from an existing order with up-to-date prices and schemes
+   */
+  static async repeatOrder(sourceOrderId: string, targetRetailerId?: string) {
+    const source = await prisma.order.findUnique({
+      where: { id: sourceOrderId },
+      include: { items: true },
+    });
+
+    if (!source) {
+      throw new Error(`Source order ${sourceOrderId} not found`);
+    }
+
+    const retailerId = targetRetailerId || source.retailerId;
+    const itemsInput: CreateOrderItemInput[] = source.items.map((it) => ({
+      productId: it.productId,
+      quantity: it.quantity,
+    }));
+
+    return this.createOrder({
+      retailerId,
+      salesmanId: source.salesmanId || undefined,
+      items: itemsInput,
+      notes: `1-Click Reorder from previous ${source.orderNumber}`,
+      createdVia: 'REPEAT_ORDER',
     });
   }
 

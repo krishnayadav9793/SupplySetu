@@ -142,11 +142,50 @@ export class OrdersController {
   static async dispatchOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const dispatched = await OrdersService.dispatchOrder(id);
+      const { notes } = req.body;
+      const dispatched = await OrdersService.dispatchOrder(id, notes);
       res.status(200).json({
         success: true,
-        message: `Order dispatched for delivery`,
+        message: `Order ${dispatched.orderNumber} dispatched for delivery`,
         data: dispatched,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deliverOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const { notes } = req.body;
+      const delivered = await OrdersService.deliverOrder(id, notes);
+      res.status(200).json({
+        success: true,
+        message: `Order ${delivered.orderNumber} marked as delivered to retailer`,
+        data: delivered,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async repeatOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      let targetRetailerId: string | undefined;
+
+      if (req.user?.role === Role.RETAILER) {
+        const retailer = await prisma.retailer.findUnique({
+          where: { userId: req.user.id },
+        });
+        targetRetailerId = retailer?.id;
+      }
+
+      const newOrder = await OrdersService.repeatOrder(id, targetRetailerId);
+      res.status(201).json({
+        success: true,
+        message: `Order successfully repeated as ${newOrder.orderNumber}`,
+        data: newOrder,
       });
     } catch (error) {
       next(error);

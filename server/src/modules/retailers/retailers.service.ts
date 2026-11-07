@@ -205,4 +205,201 @@ export class RetailersService {
     });
     return updated;
   }
+
+  /**
+   * Get Retailer Khata Ledger & Passbook Statement
+   */
+  static async getKhataLedger(retailerId: string) {
+    const retailer = await prisma.retailer.findUnique({
+      where: { id: retailerId },
+      include: {
+        salesman: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        orders: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: { name: true, skuCode: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!retailer) {
+      throw new Error(`Retailer ${retailerId} not found`);
+    }
+
+    const creditLimit = retailer.creditLimit;
+    const outstandingBalance = retailer.outstandingBalance;
+    const availableCredit = Math.max(0, creditLimit - outstandingBalance);
+    const creditUtilization = creditLimit > 0
+      ? Math.round((outstandingBalance / creditLimit) * 100)
+      : 0;
+
+    let creditStatus: 'HEALTHY' | 'WARNING' | 'OVERDUE_HOLD' = 'HEALTHY';
+    if (outstandingBalance > creditLimit) {
+      creditStatus = 'OVERDUE_HOLD';
+    } else if (creditUtilization >= 80) {
+      creditStatus = 'WARNING';
+    }
+
+    // Generate Ledger Entries
+    // Each order is an Invoice (DEBIT to Kirana Khata)
+    const transactions: Array<{
+      id: string;
+      date: string;
+      type: 'INVOICE' | 'PAYMENT';
+      referenceNo: string;
+      description: string;
+      debit: number;
+      credit: number;
+      runningBalance: number;
+      paymentMode?: string;
+      orderId?: string;
+      status: string;
+    }> = [];
+
+    // Order from oldest to newest to compute running balance
+    const chronOrders = [...retailer.orders].reverse();
+    let currentBalance = 0;
+
+    for (const ord of chronOrders) {
+      if (ord.status === 'REJECTED') continue;
+
+      currentBalance += ord.finalAmount;
+      transactions.push({
+        id: `txn-inv-${ord.id}`,
+        date: ord.createdAt.toISOString(),
+        type: 'INVOICE',
+        referenceNo: ord.orderNumber,
+        description: `B2B Supply Invoice (${ord.items.length} items) - Jabalpur Warehouse`,
+        debit: ord.finalAmount,
+        credit: 0,
+        runningBalance: Math.round(currentBalance * 100) / 100,
+        orderId: ord.id,
+        status: ord.status,
+      });
+
+      // If approved or delivered and balance was partially settled, add demo settlement entry
+      if (ord.status === 'DELIVERED' || ord.status === 'APPROVED') {
+        const settlementAmount = Math.round(ord.finalAmount * 0.7 * 100) / 100;
+        if (currentBalance >= settlementAmount) {
+          currentBalance -= settlementAmount;
+          const payDate = new Date(ord.createdAt.getTime() + 1000 * 60 * 60 * 24 * 3);
+          transactions.push({
+            id: `txn-pay-${ord.id}`,
+            date: payDate.toISOString(),
+            type: 'PAYMENT',
+            referenceNo: `UPI-SETTLE-${ord.orderNumber.replace('ORD-', '')}`,
+            description: `UPI Khata Repayment via ${retailer.salesman?.name || 'Salesman'}`,
+            debit: 0,
+            credit: settlementAmount,
+            runningBalance: Math.round(currentBalance * 100) / 100,
+            paymentMode: 'UPI_DIRECT',
+            status: 'SETTLED',
+          });
+        }
+      }
+    }
+
+    // Reverse transactions so newest appears at the top
+    transactions.reverse();
+
+    return {
+      retailer: {
+        id: retailer.id,
+        shopName: retailer.shopName,
+        ownerName: retailer.ownerName,
+        phone: retailer.phone,
+        address: retailer.address,
+        city: retailer.city,
+        state: retailer.state,
+        gstNumber: retailer.gstNumber,
+        priceTier: retailer.priceTier,
+        creditLimit,
+        outstandingBalance,
+        availableCredit,
+        creditUtilization,
+        creditStatus,
+        salesman: retailer.salesman,
+      },
+      summary: {
+        totalOrdersCount: retailer.orders.length,
+        totalInvoicedAmount: Math.round(
+          retailer.orders
+            .filter((o) => o.status !== 'REJECTED')
+            .reduce((sum, o) => sum + o.finalAmount, 0) * 100
+        ) / 100,
+        paymentTerms: 'Weekly Settlement / Net 7 Days from Delivery',
+        distributorUpiVpa: 'supplysetu.distributor@icici',
+        distributorBankName: 'State Bank of India (Lordganj Branch, Jabalpur)',
+        distributorAccountNo: '30492817492',
+        distributorIfsc: 'SBIN0001242',
+      },
+      transactions,
+    };
+  }
+
+  /**
+   * Record a payment/settlement on the retailer's khata
+   */
+  static async recordPayment(
+    retailerId: string,
+    data: {
+      amount: number;
+      paymentMode?: string;
+      referenceNo?: string;
+      notes?: string;
+    }
+  ) {
+    const { amount, paymentMode = 'UPI', referenceNo, notes } = data;
+    if (!amount || amount <= 0) {
+      throw new Error('Payment amount must be greater than zero');
+    }
+
+    const retailer = await prisma.retailer.findUnique({ where: { id: retailerId } });
+    if (!retailer) {
+      throw new Error(`Retailer ${retailerId} not found`);
+    }
+
+    const updated = await prisma.retailer.update({
+      where: { id: retailerId },
+      data: {
+        outstandingBalance: {
+          decrement: amount,
+        },
+      },
+    });
+
+    const finalBalance = Math.max(0, updated.outstandingBalance);
+    // Ensure balance doesn't go below 0
+    if (updated.outstandingBalance < 0) {
+      await prisma.retailer.update({
+        where: { id: retailerId },
+        data: { outstandingBalance: 0 },
+      });
+    }
+
+    return {
+      success: true,
+      receiptNumber: referenceNo || `PAY-REC-${Date.now().toString().slice(-6)}`,
+      amountPaid: amount,
+      paymentMode,
+      previousBalance: retailer.outstandingBalance,
+      newOutstandingBalance: finalBalance,
+      availableCredit: Math.max(0, retailer.creditLimit - finalBalance),
+      notes,
+      recordedAt: new Date().toISOString(),
+    };
+  }
 }

@@ -26,4 +26,10 @@ router.patch('/:id/reject', optionalAuthenticate, OrdersController.rejectOrder);
 // Dispatch
 router.patch('/:id/dispatch', optionalAuthenticate, OrdersController.dispatchOrder);
 
+// Deliver
+router.patch('/:id/deliver', optionalAuthenticate, OrdersController.deliverOrder);
+
+// 1-Click Repeat Order
+router.post('/:id/repeat', optionalAuthenticate, OrdersController.repeatOrder);
+
 export default router;

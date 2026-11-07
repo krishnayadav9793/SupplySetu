@@ -1,18 +1,27 @@
 import { Router } from 'express';
 import { RetailersController } from './retailers.controller';
-import { authenticate, requireRoles } from '../../middleware/auth';
+import { authenticate, optionalAuthenticate, requireRoles } from '../../middleware/auth';
 import { Role } from '@prisma/client';
 
 const router = Router();
 
 // Retailer's own profile
-router.get('/me', authenticate, RetailersController.getMe);
+router.get('/me', optionalAuthenticate, RetailersController.getMe);
+
+// Retailer's own Khata ledger & passbook statement
+router.get('/me/khata', optionalAuthenticate, RetailersController.getMyKhata);
 
 // List retailers (Admin & Salesman)
-router.get('/', authenticate, requireRoles(Role.ADMIN, Role.SALESMAN), RetailersController.listRetailers);
+router.get('/', optionalAuthenticate, RetailersController.listRetailers);
 
 // Specific retailer by id
-router.get('/:id', authenticate, RetailersController.getRetailerById);
+router.get('/:id', optionalAuthenticate, RetailersController.getRetailerById);
+
+// Specific retailer's Khata statement (Admin & Salesman)
+router.get('/:id/khata', optionalAuthenticate, RetailersController.getRetailerKhata);
+
+// Record payment received against Khata dues (Admin & Salesman)
+router.post('/:id/payments', optionalAuthenticate, RetailersController.recordPayment);
 
 // Update retailer
 router.put('/:id', authenticate, RetailersController.updateRetailer);

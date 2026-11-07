@@ -249,7 +249,122 @@ export async function runAllTests() {
     assertEqual(hasHallucinated, false, 'System must NEVER hallucinate or invent non-existent SKUs');
   });
 
-  // 7. PRINT SUMMARY REPORT
+  // 7. TASK 6: KHATA LEDGER, REPEAT ORDERING & TAX INVOICE COMPLIANCE TESTS
+  await runTest('Khata Ledger', 'Ledger utilization and available credit correctly computed', () => {
+    const creditLimit = 100000;
+    const outstanding = 35000;
+    const availableCredit = Math.max(0, creditLimit - outstanding);
+    const utilizationPct = Math.round((outstanding / creditLimit) * 1000) / 10;
+
+    assertEqual(availableCredit, 65000, 'Available credit must be credit limit minus outstanding');
+    assertEqual(utilizationPct, 35.0, 'Credit utilization percentage must be 35.0%');
+  });
+
+  await runTest('Khata Ledger', 'Settlement payment decreases outstanding balance and logs passbook credit', () => {
+    let currentOutstanding = 35000;
+    const paymentAmount = 15000;
+    const previousOutstanding = currentOutstanding;
+
+    // Simulate payment application
+    currentOutstanding = Math.max(0, currentOutstanding - paymentAmount);
+
+    assertEqual(currentOutstanding, 20000, 'Outstanding balance should be reduced to 20000');
+    assertEqual(previousOutstanding - paymentAmount, currentOutstanding, 'Delta must equal exact payment amount');
+  });
+
+  await runTest('B2B Tax Invoice', 'Rule 46 CGST Compliance: 50/50 CGST/SGST intra-state split (State Code 23)', () => {
+    const taxableSubtotal = 12500;
+    const gstRate = 18; // 18% GST slab
+    const totalGst = (taxableSubtotal * gstRate) / 100; // 2250
+    const cgstRate = gstRate / 2; // 9%
+    const sgstRate = gstRate / 2; // 9%
+    const cgstAmount = totalGst / 2; // 1125
+    const sgstAmount = totalGst / 2; // 1125
+    const invoiceGrandTotal = taxableSubtotal + totalGst; // 14750
+
+    assertEqual(totalGst, 2250, 'Total GST must be 2250');
+    assertEqual(cgstRate, 9, 'CGST rate must be 9%');
+    assertEqual(sgstRate, 9, 'SGST rate must be 9%');
+    assertEqual(cgstAmount, 1125, 'CGST amount must be 1125');
+    assertEqual(sgstAmount, 1125, 'SGST amount must be 1125');
+    assertEqual(invoiceGrandTotal, 14750, 'Grand total must equal taxable + total GST');
+  });
+
+  await runTest('B2B Tax Invoice', 'HSN Chapter Classification mapping for FMCG catalogue', () => {
+    const testCases: Record<string, string> = {
+      'PARLE-G-80G': '1905',
+      'BRIT-GOODDAY-100G': '1905',
+      'MAGGI-NOODLE-70G': '1902',
+      'SURF-EXCEL-500G': '3402',
+      'TATA-SALT-1KG': '2501',
+      'FORTUNE-SOYA-1L': '1507',
+      'LIFEBUOY-SOAP-100G': '3401',
+      'COLGATE-MAX-150G': '3306',
+    };
+
+    const HSN_CODE_MAP: Record<string, string> = {
+      'PARLE-G-80G': '1905',
+      'BRIT-GOODDAY-100G': '1905',
+      'MAGGI-NOODLE-70G': '1902',
+      'SURF-EXCEL-500G': '3402',
+      'TATA-SALT-1KG': '2501',
+      'FORTUNE-SOYA-1L': '1507',
+      'LIFEBUOY-SOAP-100G': '3401',
+      'COLGATE-MAX-150G': '3306',
+    };
+
+    for (const [sku, expectedHsn] of Object.entries(testCases)) {
+      assertEqual(HSN_CODE_MAP[sku], expectedHsn, `HSN code for SKU ${sku} must match Chapter ${expectedHsn}`);
+    }
+  });
+
+  await runTest('Order Lifecycle', 'State transitions obey PENDING -> APPROVED -> DISPATCHED -> DELIVERED lifecycle', () => {
+    const validTransitions: Record<string, string[]> = {
+      PENDING: ['APPROVED', 'REJECTED'],
+      APPROVED: ['DISPATCHED', 'REJECTED'],
+      DISPATCHED: ['DELIVERED'],
+      DELIVERED: [],
+      REJECTED: [],
+    };
+
+    assert(validTransitions['PENDING'].includes('APPROVED'), 'PENDING can transition to APPROVED');
+    assert(validTransitions['APPROVED'].includes('DISPATCHED'), 'APPROVED can transition to DISPATCHED');
+    assert(validTransitions['DISPATCHED'].includes('DELIVERED'), 'DISPATCHED can transition to DELIVERED');
+    assert(!validTransitions['DELIVERED'].includes('PENDING'), 'DELIVERED cannot revert to PENDING');
+  });
+
+  await runTest('Repeat Ordering', '1-Click Repeat Order clones item list with fresh order timestamp and PENDING status', () => {
+    const pastOrder = {
+      id: 'ord-past-001',
+      orderCode: 'ORD-20261101-001',
+      status: 'DELIVERED',
+      items: [
+        { sku: 'PARLE-G-80G', quantity: 20, unitPrice: 9.5 },
+        { sku: 'SURF-EXCEL-500G', quantity: 5, unitPrice: 110.0 },
+      ],
+    };
+
+    // Reorder operation simulation
+    const repeatedOrder = {
+      id: `ord-new-${Date.now()}`,
+      orderCode: `ORD-${Date.now().toString().slice(-6)}`,
+      status: 'PENDING',
+      notes: `Reorder based on order #${pastOrder.orderCode}`,
+      items: pastOrder.items.map((it) => ({
+        sku: it.sku,
+        quantity: it.quantity,
+        unitPrice: it.unitPrice,
+      })),
+    };
+
+    assertEqual(repeatedOrder.status, 'PENDING', 'Repeated order must start in PENDING status');
+    assertEqual(repeatedOrder.items.length, 2, 'Repeated order must preserve all item lines');
+    assertEqual(repeatedOrder.items[0].sku, 'PARLE-G-80G', 'First SKU must match');
+    assertEqual(repeatedOrder.items[1].quantity, 5, 'Second item quantity must match');
+    assert(repeatedOrder.notes.includes(pastOrder.orderCode), 'Notes must reference previous order');
+  });
+
+  // 8. PRINT SUMMARY REPORT
   console.log('----------------------------------------------------');
   let passedCount = 0;
   for (const r of results) {

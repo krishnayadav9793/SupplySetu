@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { Role, PriceTier } from '@prisma/client';
 import { AuthenticatedRequest } from '../../middleware/auth';
 import { RetailersService } from './retailers.service';
+import { prisma } from '../../config';
 
 export class RetailersController {
   static async getMe(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -91,6 +92,64 @@ export class RetailersController {
         success: true,
         message: 'Retailer updated successfully',
         data: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyKhata(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      let retailerId: string | null = null;
+      if (req.user?.id) {
+        const retailer = await prisma.retailer.findUnique({
+          where: { userId: req.user.id },
+        });
+        if (retailer) retailerId = retailer.id;
+      }
+
+      if (!retailerId) {
+        // Fallback to first retailer in database for demo testing
+        const firstRetailer = await prisma.retailer.findFirst({ where: { isActive: true } });
+        if (firstRetailer) retailerId = firstRetailer.id;
+      }
+
+      if (!retailerId) {
+        res.status(404).json({ success: false, message: 'No retailer profile found' });
+        return;
+      }
+
+      const ledger = await RetailersService.getKhataLedger(retailerId);
+      res.status(200).json({ success: true, data: ledger });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getRetailerKhata(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const ledger = await RetailersService.getKhataLedger(id);
+      res.status(200).json({ success: true, data: ledger });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async recordPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const { amount, paymentMode, referenceNo, notes } = req.body;
+      const result = await RetailersService.recordPayment(id, {
+        amount: parseFloat(amount),
+        paymentMode,
+        referenceNo,
+        notes,
+      });
+      res.status(200).json({
+        success: true,
+        message: `Payment of ₹${amount} recorded successfully. Outstanding balance updated.`,
+        data: result,
       });
     } catch (error) {
       next(error);
