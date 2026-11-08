@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -12,40 +14,49 @@ html, body, #root {
 
 :root {
   /* MacBook Typography Stack & Apple Smoothing */
-  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family:
+    'SF Pro Display',
+    'SF Pro Text',
+    -apple-system,
+    BlinkMacSystemFont,
+    'San Francisco',
+    'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 
   /* Light Theme Variables (from Light Theme screenshot) */
-  --theme-bg: #F4F6F9;
-  --theme-card: #FFFFFF;
-  --theme-elevated: #F8FAFC;
-  --theme-subtle: #F1F5F9;
-  --theme-border: #E2E8F0;
+  --theme-bg: #f4f6f9;
+  --theme-card: #ffffff;
+  --theme-elevated: #f8fafc;
+  --theme-subtle: #f1f5f9;
+  --theme-border: #e2e8f0;
   --theme-border-subtle: rgba(0, 0, 0, 0.06);
-  --theme-text-primary: #0F172A;
-  --theme-text-secondary: #64748B;
-  --theme-text-muted: #94A3B8;
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #64748b;
+  --theme-text-muted: #94a3b8;
 
   /* Accent & Emerald Brand */
-  --brand-primary: #10B981;
-  --brand-gradient-start: #10B981;
-  --brand-gradient-end: #34D399;
+  --brand-primary: #10b981;
+  --brand-gradient-start: #10b981;
+  --brand-gradient-end: #34d399;
 }
 
 .dark {
   /* Dark Theme Variables (from Dark Theme screenshot) */
-  --theme-bg: #0C0E12;
-  --theme-card: #16181E;
-  --theme-elevated: #1C2028;
+  --theme-bg: #0c0e12;
+  --theme-card: #16181e;
+  --theme-elevated: #1c2028;
   --theme-subtle: #222631;
-  --theme-border: #252A35;
+  --theme-border: #252a35;
   --theme-border-subtle: rgba(255, 255, 255, 0.07);
-  --theme-text-primary: #FFFFFF;
-  --theme-text-secondary: #94A3B8;
-  --theme-text-muted: #64748B;
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #94a3b8;
+  --theme-text-muted: #64748b;
 }
 
 /* Custom Scrollbar */
@@ -110,10 +121,10 @@ html, body, #root {
   }
 
   .gradient-emerald {
-    background-image: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+    background-image: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   }
 
   .shadow-emerald {
-    box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.40);
+    box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.4);
   }
 }

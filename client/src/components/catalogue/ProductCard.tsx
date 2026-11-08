@@ -127,14 +127,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div>
             <div className="flex items-baseline gap-2">
               <span className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                ₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                ₹
+                {rate.toLocaleString('en-IN', {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 2,
+                })}
               </span>
               <span className="text-xs text-slate-400 line-through">
                 MRP ₹{mrp.toLocaleString('en-IN')}
               </span>
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-              per {product.unit} (+{gstRate}% GST) · <span className="text-emerald-600 dark:text-emerald-400 font-semibold">₹{(rate * (1 + (gstRate || 0) / 100)).toFixed(2)} Incl. GST</span>
+              per {product.unit} (+{gstRate}% GST) ·{' '}
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                ₹{(rate * (1 + (gstRate || 0) / 100)).toFixed(2)} Incl. GST
+              </span>
             </div>
           </div>
 
@@ -211,7 +218,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {freeUnitsEarned > 0 ? (
               <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 animate-fadeIn">
                 <Check className="w-3 h-3" />
-                <span>Includes {freeUnitsEarned} FREE {product.unit}(s)!</span>
+                <span>
+                  Includes {freeUnitsEarned} FREE {product.unit}(s)!
+                </span>
               </div>
             ) : scheme && scheme.schemeType === 'BUY_X_GET_Y_FREE' ? (
               <div className="text-center text-[10px] text-slate-400">

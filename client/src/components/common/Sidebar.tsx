@@ -133,9 +133,14 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">SupplySetu Jabalpur Hub Support</h3>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  SupplySetu Jabalpur Hub Support
+                </h3>
               </div>
-              <button onClick={() => setShowHelpModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -159,7 +164,8 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
               <div className="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300">
                 <p className="font-bold">WhatsApp Order Desk</p>
                 <p className="mt-0.5 text-[11px] text-emerald-700 dark:text-emerald-400">
-                  Send handwritten Kirana slip photos to +91 98930 00001 for instant AI extraction and order confirmation.
+                  Send handwritten Kirana slip photos to +91 98930 00001 for instant AI extraction
+                  and order confirmation.
                 </p>
               </div>
             </div>
@@ -181,9 +187,14 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Workspace Session Info</h3>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Workspace Session Info
+                </h3>
               </div>
-              <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -191,11 +202,15 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             <div className="mt-4 space-y-2.5 text-xs">
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-400 font-medium">Logged-in User</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">{user?.name} ({user?.phone})</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {user?.name} ({user?.phone})
+                </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-400 font-medium">Active Role</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{role}</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  {role}
+                </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-400 font-medium">Offline Dexie Storage</span>
@@ -206,7 +221,9 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-slate-400 font-medium">Platform Version</span>
-                <span className="font-mono text-slate-600 dark:text-slate-400">SupplySetu Jabalpur v2.4</span>
+                <span className="font-mono text-slate-600 dark:text-slate-400">
+                  SupplySetu Jabalpur v2.4
+                </span>
               </div>
             </div>
 

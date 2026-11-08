@@ -42,7 +42,9 @@ export class SalesmenController {
     try {
       const { salesmanId, retailerIds } = req.body;
       if (!salesmanId || !retailerIds) {
-        res.status(400).json({ success: false, message: 'salesmanId and retailerIds are required' });
+        res
+          .status(400)
+          .json({ success: false, message: 'salesmanId and retailerIds are required' });
         return;
       }
 

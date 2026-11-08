@@ -41,9 +41,7 @@ export class PricingService {
     const dealerPrice = Math.round((basePrice - discountAmount) * 100) / 100;
 
     // Retailer profit margin vs MRP: ((mrp - dealerPrice) / mrp) * 100
-    const marginPercent = mrp > 0
-      ? Math.round(((mrp - dealerPrice) / mrp) * 1000) / 10
-      : 0;
+    const marginPercent = mrp > 0 ? Math.round(((mrp - dealerPrice) / mrp) * 1000) / 10 : 0;
 
     // GST calculation
     const gstAmount = Math.round(((dealerPrice * gstRate) / 100) * 100) / 100;

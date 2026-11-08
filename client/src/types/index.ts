@@ -391,4 +391,3 @@ export interface SalesmanPerformanceRecord {
   monthOrdersCount: number;
   monthGmv: number;
 }
-

@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const res = await fetch(`${API_BASE}/auth/me`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${storedToken}`,
+            Authorization: `Bearer ${storedToken}`,
             'Content-Type': 'application/json',
           },
         });

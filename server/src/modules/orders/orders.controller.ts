@@ -24,7 +24,10 @@ export class OrdersController {
       } else if (req.user?.role === Role.SALESMAN) {
         salesmanId = req.user.id;
         if (!retailerId) {
-          res.status(400).json({ success: false, message: 'retailerId is required when salesman punches an order' });
+          res.status(400).json({
+            success: false,
+            message: 'retailerId is required when salesman punches an order',
+          });
           return;
         }
       }

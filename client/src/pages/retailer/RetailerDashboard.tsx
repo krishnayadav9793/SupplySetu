@@ -38,7 +38,10 @@ export interface RetailerDashboardProps {
   setCurrentTab?: (tab: string) => void;
 }
 
-export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab = 'shop', setCurrentTab }) => {
+export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
+  currentTab = 'shop',
+  setCurrentTab,
+}) => {
   const { user } = useAuth();
   const { totalItemsCount, setIsCartDrawerOpen, addToCart } = useCart();
 
@@ -109,7 +112,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
     shopName: user?.retailer?.shopName || 'Shri Ganesh Kirana & General Store',
     creditLimit: user?.retailer?.creditLimit || 75000,
     outstandingBalance: user?.retailer?.outstandingBalance || 14200,
-    availableCredit: (user?.retailer?.creditLimit || 75000) - (user?.retailer?.outstandingBalance || 14200),
+    availableCredit:
+      (user?.retailer?.creditLimit || 75000) - (user?.retailer?.outstandingBalance || 14200),
     creditUtilization: 19,
     priceTier: user?.retailer?.priceTier || 'TIER_1',
     salesman: user?.retailer?.salesman || { name: 'Vikram Sharma', phone: '9893000002' },
@@ -199,7 +203,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
         notes: `Instant UPI payment for Khata balance settlement`,
       });
 
-      setToastMessage(`✓ Payment of ₹${upiPaymentAmount.toLocaleString('en-IN')} recorded! Khata balance updated.`);
+      setToastMessage(
+        `✓ Payment of ₹${upiPaymentAmount.toLocaleString('en-IN')} recorded! Khata balance updated.`
+      );
       setTimeout(() => setToastMessage(null), 4000);
       setIsUpiModalOpen(false);
       await Promise.all([loadCatalogue(), loadKhata()]);
@@ -218,7 +224,10 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
         <div className="fixed top-20 right-5 z-50 animate-slideDown bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 text-xs font-semibold">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
-          <button onClick={() => setToastMessage(null)} className="ml-2 text-slate-400 hover:text-white">
+          <button
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-white"
+          >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -233,7 +242,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
               <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 flex items-center gap-1">
                 <Store className="w-3 h-3" /> Verified FMCG Retailer
               </span>
-              <span className="text-xs text-slate-400">Jabalpur Beat #4 &bull; {creditProfile.priceTier} Pricing</span>
+              <span className="text-xs text-slate-400">
+                Jabalpur Beat #4 &bull; {creditProfile.priceTier} Pricing
+              </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               {creditProfile.shopName}
@@ -246,7 +257,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           <div className="mt-5 pt-4 border-t border-slate-100 dark:border-[#222631] flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
               <Clock className="h-4 w-4 text-emerald-500" />
-              <span>Next Delivery: <strong>Tomorrow Morning (9:30 AM)</strong></span>
+              <span>
+                Next Delivery: <strong>Tomorrow Morning (9:30 AM)</strong>
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -302,7 +315,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex items-center justify-between text-[11px] text-slate-400">
-            <span>Salesman: {creditProfile.salesman?.name} ({creditProfile.salesman?.phone})</span>
+            <span>
+              Salesman: {creditProfile.salesman?.name} ({creditProfile.salesman?.phone})
+            </span>
             <span
               onClick={() => setCurrentTab && setCurrentTab('credit')}
               className="text-emerald-500 font-semibold cursor-pointer hover:underline flex items-center gap-1"
@@ -324,7 +339,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
               AI Multimodal WhatsApp & Slip Order Capture
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Snap a photo of your handwritten paper slip (&ldquo;Parchi&rdquo;), paste WhatsApp text, or record voice note in Hindi.
+              Snap a photo of your handwritten paper slip (&ldquo;Parchi&rdquo;), paste WhatsApp
+              text, or record voice note in Hindi.
             </p>
           </div>
         </div>
@@ -353,7 +369,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Official statement of B2B invoices, UPI repayments, credit limits, and running balance
+                Official statement of B2B invoices, UPI repayments, credit limits, and running
+                balance
               </p>
             </div>
 
@@ -379,7 +396,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           {/* Khata Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
             <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Credit Limit</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Credit Limit
+              </span>
               <p className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
                 ₹{creditProfile.creditLimit.toLocaleString('en-IN')}
               </p>
@@ -387,7 +406,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
             </div>
 
             <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Outstanding</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Current Outstanding
+              </span>
               <p className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">
                 ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}
               </p>
@@ -395,7 +416,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
             </div>
 
             <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Available Credit Line</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Available Credit Line
+              </span>
               <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 ₹{creditProfile.availableCredit.toLocaleString('en-IN')}
               </p>
@@ -403,11 +426,15 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
             </div>
 
             <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Khata Health</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Khata Health
+              </span>
               <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
                 <CheckCircle2 className="w-4 h-4" /> Good Standing
               </p>
-              <span className="text-[10px] text-slate-400">{creditProfile.creditUtilization}% Limit Utilized</span>
+              <span className="text-[10px] text-slate-400">
+                {creditProfile.creditUtilization}% Limit Utilized
+              </span>
             </div>
           </div>
 
@@ -464,7 +491,11 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                                 : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
                             }`}
                           >
-                            {isInvoice ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                            {isInvoice ? (
+                              <ArrowUpRight className="w-3 h-3" />
+                            ) : (
+                              <ArrowDownLeft className="w-3 h-3" />
+                            )}
                             {isInvoice ? 'Invoice' : 'Payment'}
                           </span>
                         </td>
@@ -518,7 +549,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Placed Orders</h2>
-              <p className="text-xs text-slate-400">Track order approvals, dispatch status, and download tax invoices</p>
+              <p className="text-xs text-slate-400">
+                Track order approvals, dispatch status, and download tax invoices
+              </p>
             </div>
             <button
               onClick={() => setCurrentTab && setCurrentTab('shop')}
@@ -533,7 +566,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
               <div className="py-16 text-center text-slate-400 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                 <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
                 <p className="text-sm font-semibold">No previous orders found</p>
-                <p className="text-xs mt-1">Place an order from the catalogue or AI pad to see it here.</p>
+                <p className="text-xs mt-1">
+                  Place an order from the catalogue or AI pad to see it here.
+                </p>
               </div>
             ) : (
               myOrders.map((order) => {
@@ -561,12 +596,12 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                               isDelivered
                                 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
                                 : isDispatched
-                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400'
-                                : isApproved
-                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
-                                : isRejected
-                                ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
-                                : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+                                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400'
+                                  : isApproved
+                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
+                                    : isRejected
+                                      ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
+                                      : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
                             }`}
                           >
                             {order.status}
@@ -574,7 +609,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                         </div>
 
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
-                          {order.items.map((i) => `${i.product?.name || 'Product'} (${i.quantity} ${i.unit})`).join(', ')}
+                          {order.items
+                            .map((i) => `${i.product?.name || 'Product'} (${i.quantity} ${i.unit})`)
+                            .join(', ')}
                         </p>
 
                         {/* Order Progress Timeline */}
@@ -589,8 +626,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                               isApproved || isDispatched || isDelivered
                                 ? 'text-emerald-600'
                                 : isRejected
-                                ? 'text-rose-500'
-                                : 'text-slate-400'
+                                  ? 'text-rose-500'
+                                  : 'text-slate-400'
                             }`}
                           >
                             <span
@@ -598,8 +635,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                                 isApproved || isDispatched || isDelivered
                                   ? 'bg-emerald-500'
                                   : isRejected
-                                  ? 'bg-rose-500'
-                                  : 'bg-slate-300 dark:bg-slate-700'
+                                    ? 'bg-rose-500'
+                                    : 'bg-slate-300 dark:bg-slate-700'
                               }`}
                             />
                             <span>{isRejected ? 'Rejected' : 'Approved'}</span>
@@ -607,12 +644,16 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                           <span className="text-slate-300 dark:text-slate-600">&rarr;</span>
                           <div
                             className={`flex items-center gap-1 ${
-                              isDispatched || isDelivered ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'
+                              isDispatched || isDelivered
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-slate-400'
                             }`}
                           >
                             <span
                               className={`w-2 h-2 rounded-full ${
-                                isDispatched || isDelivered ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'
+                                isDispatched || isDelivered
+                                  ? 'bg-blue-500'
+                                  : 'bg-slate-300 dark:bg-slate-700'
                               }`}
                             />
                             <span>Dispatched</span>
@@ -647,10 +688,10 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                             {order.createdVia === 'AI_CAPTURE'
                               ? 'AI WhatsApp'
                               : order.createdVia === 'SALESMAN_APP'
-                              ? 'Salesman Punch'
-                              : order.createdVia === 'REPEAT_ORDER'
-                              ? '1-Click Reorder'
-                              : 'Direct Portal'}
+                                ? 'Salesman Punch'
+                                : order.createdVia === 'REPEAT_ORDER'
+                                  ? '1-Click Reorder'
+                                  : 'Direct Portal'}
                           </span>
                         </div>
                       </div>
@@ -658,7 +699,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
 
                     <div className="text-right sm:border-l sm:border-slate-100 dark:sm:border-slate-800 sm:pl-6 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end gap-2">
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Total Amount</span>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+                          Total Amount
+                        </span>
                         <span className="text-base font-bold text-slate-900 dark:text-white">
                           ₹{order.finalAmount.toFixed(2)}
                         </span>
@@ -673,7 +716,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                           className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-1 transition-all cursor-pointer"
                           title="Load exact items to active shopping cart"
                         >
-                          <Repeat className={`w-3.5 h-3.5 ${repeatingOrderId === order.id ? 'animate-spin' : ''}`} />
+                          <Repeat
+                            className={`w-3.5 h-3.5 ${repeatingOrderId === order.id ? 'animate-spin' : ''}`}
+                          />
                           <span>Reorder</span>
                         </button>
 
@@ -706,7 +751,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
             <div>
               <div className="flex items-center gap-2">
                 <Percent className="w-5 h-5 text-emerald-500" />
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Active B2B Trade Schemes</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Active B2B Trade Schemes
+                </h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   Wholesale Savings
                 </span>
@@ -748,7 +795,11 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                        {isBuyXGetY ? 'Buy X Get Y Free' : isPercentage ? `${scheme.discountPercent}% Bulk Discount` : 'Special FMCG Deal'}
+                        {isBuyXGetY
+                          ? 'Buy X Get Y Free'
+                          : isPercentage
+                            ? `${scheme.discountPercent}% Bulk Discount`
+                            : 'Special FMCG Deal'}
                       </span>
                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
                         Active
@@ -759,7 +810,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                       {scheme.name}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      {isBuyXGetY ? `Order minimum ${scheme.minQuantity} units to get ${scheme.freeQuantity} unit free!` : `Order minimum ${scheme.minQuantity} units to get ${scheme.discountPercent}% flat discount!`}
+                      {isBuyXGetY
+                        ? `Order minimum ${scheme.minQuantity} units to get ${scheme.freeQuantity} unit free!`
+                        : `Order minimum ${scheme.minQuantity} units to get ${scheme.discountPercent}% flat discount!`}
                     </p>
 
                     {matchedProduct && (
@@ -788,7 +841,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                         if (matchedProduct) {
                           const qty = scheme.minQuantity || 10;
                           addToCart(matchedProduct, qty);
-                          setToastMessage(`Scheme Applied: Added ${qty} units of ${matchedProduct.name} to cart!`);
+                          setToastMessage(
+                            `Scheme Applied: Added ${qty} units of ${matchedProduct.name} to cart!`
+                          );
                           setTimeout(() => setToastMessage(null), 3000);
                         }
                       }}
@@ -817,7 +872,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Showing official distributor wholesale rates & active promotional schemes for your shop
+                Showing official distributor wholesale rates & active promotional schemes for your
+                shop
               </p>
             </div>
 
@@ -900,7 +956,9 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#222631]">
               <div className="flex items-center gap-2">
                 <QrCode className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">Pay Khata Balance via UPI</h3>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  Pay Khata Balance via UPI
+                </h3>
               </div>
               <button
                 type="button"
@@ -975,7 +1033,8 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({ currentTab
                   className="w-full text-base font-bold p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
                 />
                 <span className="text-[11px] text-slate-400 block">
-                  Total Outstanding Dues: ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}
+                  Total Outstanding Dues: ₹
+                  {creditProfile.outstandingBalance.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>

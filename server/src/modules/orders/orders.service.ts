@@ -96,9 +96,11 @@ export class OrdersService {
           const sets = Math.floor(qty / activeScheme.minQuantity);
           freeQuantity = sets * activeScheme.freeQuantity;
         } else if (activeScheme.schemeType === 'PERCENTAGE_DISCOUNT') {
-          discountAmount = Math.round(((pricing.dealerPrice * qty * activeScheme.discountPercent) / 100) * 100) / 100;
+          discountAmount =
+            Math.round(((pricing.dealerPrice * qty * activeScheme.discountPercent) / 100) * 100) /
+            100;
         } else if (activeScheme.schemeType === 'FLAT_DISCOUNT') {
-          discountAmount = Math.round((activeScheme.discountPercent * qty) * 100) / 100;
+          discountAmount = Math.round(activeScheme.discountPercent * qty * 100) / 100;
         }
       }
 
@@ -507,7 +509,9 @@ export class OrdersService {
     if (!order) throw new Error(`Order ${id} not found`);
 
     if (order.status !== OrderStatus.DISPATCHED && order.status !== OrderStatus.APPROVED) {
-      throw new Error(`Order must be dispatched before it can be delivered. Current status: ${order.status}`);
+      throw new Error(
+        `Order must be dispatched before it can be delivered. Current status: ${order.status}`
+      );
     }
 
     const updated = await prisma.order.update({

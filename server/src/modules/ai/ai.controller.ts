@@ -64,7 +64,11 @@ export class AiOrderCaptureController {
   /**
    * Multimodal AI order capture (Handwritten paper slip / invoice photo + optional voice notes)
    */
-  static async captureMultimodalOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  static async captureMultimodalOrder(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const { imageBase64, mimeType, textNotes } = req.body;
 
@@ -98,12 +102,14 @@ export class AiOrderCaptureController {
     const samples = [
       {
         title: 'Kirana Morning Rush',
-        message: 'Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah',
+        message:
+          'Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah',
         description: 'Standard fast-moving grocery staples',
       },
       {
         title: 'Mixed Hindi Hinglish Order',
-        message: '5 peti chhota biscuit, 2 peti washing powder, 3 box refined tel, aur 2 case colgate',
+        message:
+          '5 peti chhota biscuit, 2 peti washing powder, 3 box refined tel, aur 2 case colgate',
         description: 'Uses colloquial Kirana terms (peti, chhota biscuit, washing powder, tel)',
       },
       {

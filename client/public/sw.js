@@ -1,10 +1,6 @@
 // SupplySetu Service Worker - Offline Shell & Cache
 const CACHE_NAME = 'supplysetu-pwa-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-];
+const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -38,12 +34,15 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).catch(() => {
-        // Fallback for document navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-      });
+      return (
+        cachedResponse ||
+        fetch(event.request).catch(() => {
+          // Fallback for document navigation
+          if (event.request.mode === 'navigate') {
+            return caches.match('/');
+          }
+        })
+      );
     })
   );
 });

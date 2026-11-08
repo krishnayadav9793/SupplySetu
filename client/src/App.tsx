@@ -70,20 +70,11 @@ function DashboardContent() {
         <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-y-auto bg-slate-50/60 dark:bg-[#0E1015]">
           {/* Strictly separate dashboards based on authorized user role */}
           {role === 'ADMIN' ? (
-            <AdminDashboard
-              currentTab={currentTab}
-              setCurrentTab={setCurrentTab}
-            />
+            <AdminDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
           ) : role === 'SALESMAN' ? (
-            <SalesmanDashboard
-              currentTab={currentTab}
-              setCurrentTab={setCurrentTab}
-            />
+            <SalesmanDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
           ) : role === 'RETAILER' ? (
-            <RetailerDashboard
-              currentTab={currentTab}
-              setCurrentTab={setCurrentTab}
-            />
+            <RetailerDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
           ) : (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600">
               <p className="font-bold text-base">Unauthorized Role Access</p>

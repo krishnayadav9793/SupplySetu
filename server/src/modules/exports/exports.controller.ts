@@ -5,7 +5,8 @@ import { ExportsService } from './exports.service';
 export class ExportsController {
   static async downloadTallyCsv(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const { csvContent, filename, orderCount, totalAmount } = await ExportsService.generateTallyCsv();
+      const { csvContent, filename, orderCount, totalAmount } =
+        await ExportsService.generateTallyCsv();
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

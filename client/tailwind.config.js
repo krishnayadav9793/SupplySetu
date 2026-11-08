@@ -1,10 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       fontFamily: {
@@ -19,12 +16,7 @@ export default {
           'Arial',
           'sans-serif',
         ],
-        display: [
-          '"SF Pro Display"',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'sans-serif',
-        ],
+        display: ['"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: [
           '"SF Mono"',
           'SFMono-Regular',
@@ -82,7 +74,7 @@ export default {
           blue: '#3B82F6',
           danger: '#EF4444',
           success: '#10B981',
-        }
+        },
       },
       boxShadow: {
         'glow-emerald': '0 4px 20px -2px rgba(16, 185, 129, 0.38)',
@@ -92,9 +84,10 @@ export default {
       },
       backgroundImage: {
         'gradient-emerald': 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
-        'gradient-emerald-vertical': 'linear-gradient(180deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 100%)',
-      }
+        'gradient-emerald-vertical':
+          'linear-gradient(180deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0) 100%)',
+      },
     },
   },
   plugins: [],
-}
+};

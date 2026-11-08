@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Truck,
-  Package,
-  Printer,
-  Phone,
-  MapPin,
-  FileSpreadsheet,
-} from 'lucide-react';
+import { X, Truck, Package, Printer, Phone, MapPin, FileSpreadsheet } from 'lucide-react';
 
 interface VanLoadingItem {
   skuCode: string;
@@ -105,7 +97,9 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
         {/* Vehicle & Beat KPI Banner */}
         <div className="p-4 bg-slate-100/60 dark:bg-[#14161C] border-b border-slate-200/60 dark:border-[#222631] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Assigned Vehicle</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Assigned Vehicle
+            </span>
             <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1 mt-0.5">
               <Truck className="w-3.5 h-3.5 text-blue-500" />
               <span>{manifestData?.vehicleNumber || 'MP-20-GB-4819 (Tata 407)'}</span>
@@ -113,14 +107,18 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
           </div>
 
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Route & Beat</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Route & Beat
+            </span>
             <span className="font-bold text-slate-900 dark:text-white truncate block mt-0.5">
               {manifestData?.routeBeat || 'Beat #4 Lordganj & Sarafa'}
             </span>
           </div>
 
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Driver Assigned</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Driver Assigned
+            </span>
             <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1 mt-0.5">
               <Phone className="w-3 h-3 text-emerald-500" />
               <span>{manifestData?.driverName || 'Manoj Verma'}</span>
@@ -128,9 +126,12 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
           </div>
 
           <div>
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Cases to Pack</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Total Cases to Pack
+            </span>
             <span className="font-black text-sm text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
-              {manifestData?.totalBoxesToLoad || 0} Cases (~{manifestData?.totalWeightEstimatedKg || 0} kg)
+              {manifestData?.totalBoxesToLoad || 0} Cases (~
+              {manifestData?.totalWeightEstimatedKg || 0} kg)
             </span>
           </div>
         </div>
@@ -146,7 +147,9 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
             }`}
           >
             <Package className="w-3.5 h-3.5" />
-            <span>1. Warehouse Packing Summary ({manifestData?.loadingItems?.length || 0} SKUs)</span>
+            <span>
+              1. Warehouse Packing Summary ({manifestData?.loadingItems?.length || 0} SKUs)
+            </span>
           </button>
 
           <button
@@ -167,12 +170,15 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
           {loading ? (
             <div className="py-20 text-center text-slate-400">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2" />
-              <p className="text-xs font-semibold">Generating Consolidated Vehicle Loading Manifest...</p>
+              <p className="text-xs font-semibold">
+                Generating Consolidated Vehicle Loading Manifest...
+              </p>
             </div>
           ) : activeTab === 'warehouse' ? (
             <div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                Load cases into the van in this exact consolidated count. Free promotional goods are included in totals.
+                Load cases into the van in this exact consolidated count. Free promotional goods are
+                included in totals.
               </p>
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#222631]">
                 <table className="w-full text-left text-xs">
@@ -236,11 +242,16 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-900 dark:text-white">{stop.shopName}</h4>
-                          <span className="text-[10px] font-mono text-slate-400">{stop.orderNumber}</span>
+                          <h4 className="font-bold text-slate-900 dark:text-white">
+                            {stop.shopName}
+                          </h4>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {stop.orderNumber}
+                          </span>
                         </div>
                         <p className="text-[11px] text-slate-500 mt-0.5">
-                          {stop.address}, {stop.city} &bull; Contact: {stop.ownerName} ({stop.phone})
+                          {stop.address}, {stop.city} &bull; Contact: {stop.ownerName} ({stop.phone}
+                          )
                         </p>
                         <p className="text-[10px] text-slate-400 font-mono mt-1">
                           Items: {stop.itemSummary}
@@ -249,7 +260,9 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
                     </div>
 
                     <div className="text-right flex-shrink-0 sm:border-l border-slate-200 dark:border-slate-800 sm:pl-4">
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">Unload Count</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">
+                        Unload Count
+                      </p>
                       <p className="font-black text-sm text-blue-600 dark:text-blue-400 font-mono">
                         {stop.totalBoxes} Cases
                       </p>
@@ -267,7 +280,10 @@ export const VanLoadingModal: React.FC<VanLoadingModalProps> = ({
         {/* Modal Footer Controls */}
         <div className="p-4 border-t border-slate-200/80 dark:border-[#222631] bg-slate-50/70 dark:bg-[#1B1F27]/60 flex items-center justify-between gap-3">
           <div className="text-[11px] text-slate-400 hidden sm:block">
-            Manifest ID: <span className="font-mono text-slate-600 dark:text-slate-300">{manifestData?.manifestId}</span>
+            Manifest ID:{' '}
+            <span className="font-mono text-slate-600 dark:text-slate-300">
+              {manifestData?.manifestId}
+            </span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">

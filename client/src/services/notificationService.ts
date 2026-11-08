@@ -161,11 +161,12 @@ class NotificationServiceManager {
         o.createdVia === 'SALESMAN_APP'
           ? `Beat Salesman ${o.salesmanName || 'Field Agent'}`
           : o.createdVia === 'AI_CAPTURE'
-          ? 'AI WhatsApp Pad'
-          : 'Retailer Portal';
+            ? 'AI WhatsApp Pad'
+            : 'Retailer Portal';
 
       if (role === 'RETAILER') {
-        const isMyOrder = !this.currentUser?.retailerId || o.retailerId === this.currentUser.retailerId;
+        const isMyOrder =
+          !this.currentUser?.retailerId || o.retailerId === this.currentUser.retailerId;
         title = isMyOrder ? `Order Placed: #${o.orderNumber}` : `Hub Order: #${o.orderNumber}`;
         message = isMyOrder
           ? `Your order of ₹${o.finalAmount.toFixed(0)} (${o.itemsCount} items) has been received by Jabalpur Hub.`

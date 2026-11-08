@@ -140,7 +140,8 @@ export const CartDrawer: React.FC = () => {
                   {placedOrder.orderNumber}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
-                  Your order has been routed to the Jabalpur distribution desk for verification & dispatch.
+                  Your order has been routed to the Jabalpur distribution desk for verification &
+                  dispatch.
                 </p>
               </div>
 
@@ -204,7 +205,8 @@ export const CartDrawer: React.FC = () => {
                             {item.product.name}
                           </h4>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            ₹{item.unitPrice.toFixed(2)} / {item.product.unit} • {item.product.packSize}
+                            ₹{item.unitPrice.toFixed(2)} / {item.product.unit} •{' '}
+                            {item.product.packSize}
                           </div>
                         </div>
 
@@ -224,7 +226,8 @@ export const CartDrawer: React.FC = () => {
                           <Sparkles className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                           <span>
                             {item.freeQuantity > 0 && `+${item.freeQuantity} Free Box `}
-                            {item.discountAmount > 0 && `(-₹${item.discountAmount.toFixed(2)} discount)`}
+                            {item.discountAmount > 0 &&
+                              `(-₹${item.discountAmount.toFixed(2)} discount)`}
                           </span>
                         </div>
                       )}

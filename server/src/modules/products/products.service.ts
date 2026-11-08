@@ -117,12 +117,7 @@ export class ProductsService {
 
     // Format products with personalized pricing and scheme highlights
     const formattedProducts = products.map((prod) => {
-      const pricing = PricingService.calculatePrice(
-        prod.basePrice,
-        prod.mrp,
-        prod.gstRate,
-        tier
-      );
+      const pricing = PricingService.calculatePrice(prod.basePrice, prod.mrp, prod.gstRate, tier);
 
       const activeScheme = prod.schemes.length > 0 ? prod.schemes[0] : null;
 

@@ -316,7 +316,9 @@ export class ExportsService {
       }
     }
 
-    const loadingItems = Object.values(skuMap).sort((a, b) => b.totalBoxesToLoad - a.totalBoxesToLoad);
+    const loadingItems = Object.values(skuMap).sort(
+      (a, b) => b.totalBoxesToLoad - a.totalBoxesToLoad
+    );
 
     // 4. Build sequential delivery stops
     const deliveryStops: VanDeliveryStop[] = approvedOrders.map((order, idx) => {
@@ -325,7 +327,10 @@ export class ExportsService {
         0
       );
       const summary = order.items
-        .map((it: any) => `${it.product.skuCode} (${it.quantity + (it.freeQuantity || 0)} ${it.unit || 'cs'})`)
+        .map(
+          (it: any) =>
+            `${it.product.skuCode} (${it.quantity + (it.freeQuantity || 0)} ${it.unit || 'cs'})`
+        )
         .join(', ');
 
       return {
@@ -360,7 +365,9 @@ export class ExportsService {
 
     csvLines.push('');
     csvLines.push('--- SECTION 2: DELIVERY SEQUENCE STOPS (DROP LIST FOR DRIVER) ---');
-    csvLines.push('Stop #,Order #,Kirana Shop,Owner,Delivery Address,Phone,Total Cases,Invoice Total (INR),Manifest Summary');
+    csvLines.push(
+      'Stop #,Order #,Kirana Shop,Owner,Delivery Address,Phone,Total Cases,Invoice Total (INR),Manifest Summary'
+    );
 
     for (const stop of deliveryStops) {
       csvLines.push(
@@ -369,7 +376,9 @@ export class ExportsService {
     }
 
     csvLines.push('');
-    csvLines.push('Warehouse Supervisor Signature: _______________________,Driver Acknowledgement: _______________________');
+    csvLines.push(
+      'Warehouse Supervisor Signature: _______________________,Driver Acknowledgement: _______________________'
+    );
 
     const csvContent = csvLines.join('\r\n');
     const filename = `VAN_LOADING_MANIFEST_${today.replace(/-/g, '')}.csv`;

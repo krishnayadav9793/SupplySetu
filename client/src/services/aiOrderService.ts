@@ -13,12 +13,15 @@ export interface SampleParchi {
 export const SAMPLE_PROMPTS: SamplePrompt[] = [
   {
     title: 'Benchmark Order (Problem Statement Sample)',
-    message: 'bhaiya 5 peti biscuit chhota, 2 peti washing powder 1 kilo, chai patti 250 wala 1 peti',
-    description: 'Exact benchmark order from Jabalpur problem statement (tests stock-out detection on tea)',
+    message:
+      'bhaiya 5 peti biscuit chhota, 2 peti washing powder 1 kilo, chai patti 250 wala 1 peti',
+    description:
+      'Exact benchmark order from Jabalpur problem statement (tests stock-out detection on tea)',
   },
   {
     title: 'Kirana Morning Rush',
-    message: 'Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah',
+    message:
+      'Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah',
     description: 'Fast-moving biscuits, instant noodles, and salt staple order',
   },
   {
@@ -189,7 +192,9 @@ export const AiOrderService = {
     }
 
     // Fallback default sample order
-    return this.parseLocally('10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak, 3 box refined tel');
+    return this.parseLocally(
+      '10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak, 3 box refined tel'
+    );
   },
 
   async getSamplePrompts(): Promise<SamplePrompt[]> {
@@ -233,10 +238,16 @@ export const AiOrderService = {
     };
 
     const rules = [
-      { sku: 'PARLE-G-80G', patterns: [/parle[-\s]?g/i, /glucose/i, /chhot[ae]\s*biscuit/i, /biscuit/i] },
+      {
+        sku: 'PARLE-G-80G',
+        patterns: [/parle[-\s]?g/i, /glucose/i, /chhot[ae]\s*biscuit/i, /biscuit/i],
+      },
       { sku: 'BRIT-GOODDAY-100G', patterns: [/good[-\s]?day/i, /butter\s*biscuit/i, /britannia/i] },
       { sku: 'MAGGI-NOODLE-70G', patterns: [/maggi/i, /maggie/i, /noodle/i, /2[-\s]?minute/i] },
-      { sku: 'SURF-EXCEL-500G', patterns: [/surf[-\s]?excel/i, /surf/i, /washing\s*powder/i, /detergent/i] },
+      {
+        sku: 'SURF-EXCEL-500G',
+        patterns: [/surf[-\s]?excel/i, /surf/i, /washing\s*powder/i, /detergent/i],
+      },
       { sku: 'TATA-SALT-1KG', patterns: [/tata\s*salt/i, /namak/i, /salt/i] },
       { sku: 'FORTUNE-SOYA-1L', patterns: [/fortune/i, /soya/i, /tel/i, /refined/i, /oil/i] },
       { sku: 'LIFEBUOY-SOAP-100G', patterns: [/lifebuoy/i, /sabun/i, /soap/i] },
@@ -299,7 +310,9 @@ export const AiOrderService = {
           totalUnits += quantity;
 
           const alternatives = products
-            .filter((p) => p.id !== prod.id && (p.category === prod.category || p.brand === prod.brand))
+            .filter(
+              (p) => p.id !== prod.id && (p.category === prod.category || p.brand === prod.brand)
+            )
             .slice(0, 3)
             .map((alt) => ({
               sku: alt.skuCode,

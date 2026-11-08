@@ -1,0 +1,5 @@
+{
+  "client/**/*.{ts,tsx}": ["npm run lint --prefix client", "prettier --write"],
+  "server/**/*.ts": ["npm run lint --prefix server", "prettier --write"],
+  "*.{json,md,yml,yaml,css}": ["prettier --write"]
+}

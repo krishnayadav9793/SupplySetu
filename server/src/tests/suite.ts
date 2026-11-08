@@ -123,15 +123,19 @@ export async function runAllTests() {
   });
 
   // 3. CREDIT LIMIT & HOLD TESTS
-  await runTest('Credit Controls', 'Order within available credit limit is approved without warning', () => {
-    const creditLimit = 75000;
-    const outstanding = 14200;
-    const availableCredit = creditLimit - outstanding; // 60800
-    const orderTotal = 25000;
+  await runTest(
+    'Credit Controls',
+    'Order within available credit limit is approved without warning',
+    () => {
+      const creditLimit = 75000;
+      const outstanding = 14200;
+      const availableCredit = creditLimit - outstanding; // 60800
+      const orderTotal = 25000;
 
-    const exceedsCredit = orderTotal > availableCredit;
-    assert(!exceedsCredit, 'Order should not exceed available credit');
-  });
+      const exceedsCredit = orderTotal > availableCredit;
+      assert(!exceedsCredit, 'Order should not exceed available credit');
+    }
+  );
 
   await runTest('Credit Controls', 'Order exceeding credit line triggers Credit Hold flag', () => {
     const creditLimit = 50000;
@@ -153,12 +157,16 @@ export async function runAllTests() {
     assert(id1 !== id2, 'Two consecutive offline order IDs must be unique');
   });
 
-  await runTest('Offline Sync', 'Deduplication prevention logic rejects duplicated clientOrderId', () => {
-    const syncedOrders = new Set(['offline-173000-abc123', 'offline-173000-xyz789']);
-    const incomingId = 'offline-173000-abc123';
-    const isDuplicate = syncedOrders.has(incomingId);
-    assert(isDuplicate, 'Duplicate clientOrderId must be detected and skipped');
-  });
+  await runTest(
+    'Offline Sync',
+    'Deduplication prevention logic rejects duplicated clientOrderId',
+    () => {
+      const syncedOrders = new Set(['offline-173000-abc123', 'offline-173000-xyz789']);
+      const incomingId = 'offline-173000-abc123';
+      const isDuplicate = syncedOrders.has(incomingId);
+      assert(isDuplicate, 'Duplicate clientOrderId must be detected and skipped');
+    }
+  );
 
   // 5. TALLY CSV EXPORT FORMAT TESTS
   await runTest('Tally Export', 'RFC-4180 CSV escaping for kirana store names with commas', () => {
@@ -210,85 +218,127 @@ export async function runAllTests() {
   });
 
   // 6. MULTIMODAL AI & TRANSPARENCY TESTS
-  await runTest('Multimodal AI', 'Diagnostic status check returns valid model & engine', async () => {
-    const status = AiOrderCaptureService.getAiStatus();
-    assert(typeof status.isGeminiConfigured === 'boolean', 'isGeminiConfigured must be boolean');
-    assert(status.model.includes('flash'), 'Model must be a flash model');
-    assert(status.supportedFeatures.includes('handwritten_parchi_vision'), 'Must support handwritten parchi vision');
-    assert(typeof status.guidanceMessage === 'string' && status.guidanceMessage.length > 0, 'Must have guidance message');
-  });
-
-  await runTest('Multimodal AI', 'Parchi slip photo multimodal processing produces validated cart items', async () => {
-    const dummySvgData = 'data:image/svg+xml;utf8,<svg></svg>';
-    const result = await AiOrderCaptureService.processMultimodalOrder({
-      imageBase64: dummySvgData,
-      mimeType: 'image/svg+xml',
-      textNotes: 'Urgent order for kal subah',
-    });
-
-    assert(result.items.length > 0, 'Must extract at least one catalogue item from parchi slip');
-    assertEqual(result.captureMode, 'PARCHI_VISION', 'Capture mode must be tagged PARCHI_VISION');
-    assert(result.totalEstimatedAmount > 0, 'Estimated amount must be calculated');
-    for (const item of result.items) {
-      assert(item.unitPrice > 0, `Unit price for ${item.sku} must be > 0`);
-      assert(item.itemTotal > 0, `Item total for ${item.sku} must be > 0`);
-      assert(typeof item.stockAvailable === 'number', `Stock available must be defined`);
+  await runTest(
+    'Multimodal AI',
+    'Diagnostic status check returns valid model & engine',
+    async () => {
+      const status = AiOrderCaptureService.getAiStatus();
+      assert(typeof status.isGeminiConfigured === 'boolean', 'isGeminiConfigured must be boolean');
+      assert(status.model.includes('flash'), 'Model must be a flash model');
+      assert(
+        status.supportedFeatures.includes('handwritten_parchi_vision'),
+        'Must support handwritten parchi vision'
+      );
+      assert(
+        typeof status.guidanceMessage === 'string' && status.guidanceMessage.length > 0,
+        'Must have guidance message'
+      );
     }
-  });
+  );
 
-  await runTest('Multimodal AI', 'AI Safety Rule: Non-catalogue items must never be hallucinated as SKUs', async () => {
-    const result = await AiOrderCaptureService.processOrderMessage(
-      'bhaiya 10 peti random_nonexistent_brand_xyz 99kg loose wheat bhejo'
-    );
-    // Non-catalogue tokens must land in unrecognizedItems
-    assert(
-      result.unrecognizedItems.length > 0,
-      'Non-catalogue items must be safely listed in unrecognizedItems'
-    );
-    const hasHallucinated = result.items.some((i) => i.sku.includes('random_nonexistent'));
-    assertEqual(hasHallucinated, false, 'System must NEVER hallucinate or invent non-existent SKUs');
-  });
+  await runTest(
+    'Multimodal AI',
+    'Parchi slip photo multimodal processing produces validated cart items',
+    async () => {
+      const dummySvgData = 'data:image/svg+xml;utf8,<svg></svg>';
+      const result = await AiOrderCaptureService.processMultimodalOrder({
+        imageBase64: dummySvgData,
+        mimeType: 'image/svg+xml',
+        textNotes: 'Urgent order for kal subah',
+      });
+
+      assert(result.items.length > 0, 'Must extract at least one catalogue item from parchi slip');
+      assertEqual(result.captureMode, 'PARCHI_VISION', 'Capture mode must be tagged PARCHI_VISION');
+      assert(result.totalEstimatedAmount > 0, 'Estimated amount must be calculated');
+      for (const item of result.items) {
+        assert(item.unitPrice > 0, `Unit price for ${item.sku} must be > 0`);
+        assert(item.itemTotal > 0, `Item total for ${item.sku} must be > 0`);
+        assert(typeof item.stockAvailable === 'number', `Stock available must be defined`);
+      }
+    }
+  );
+
+  await runTest(
+    'Multimodal AI',
+    'AI Safety Rule: Non-catalogue items must never be hallucinated as SKUs',
+    async () => {
+      const result = await AiOrderCaptureService.processOrderMessage(
+        'bhaiya 10 peti random_nonexistent_brand_xyz 99kg loose wheat bhejo'
+      );
+      // Non-catalogue tokens must land in unrecognizedItems
+      assert(
+        result.unrecognizedItems.length > 0,
+        'Non-catalogue items must be safely listed in unrecognizedItems'
+      );
+      const hasHallucinated = result.items.some((i) => i.sku.includes('random_nonexistent'));
+      assertEqual(
+        hasHallucinated,
+        false,
+        'System must NEVER hallucinate or invent non-existent SKUs'
+      );
+    }
+  );
 
   // 7. TASK 6: KHATA LEDGER, REPEAT ORDERING & TAX INVOICE COMPLIANCE TESTS
-  await runTest('Khata Ledger', 'Ledger utilization and available credit correctly computed', () => {
-    const creditLimit = 100000;
-    const outstanding = 35000;
-    const availableCredit = Math.max(0, creditLimit - outstanding);
-    const utilizationPct = Math.round((outstanding / creditLimit) * 1000) / 10;
+  await runTest(
+    'Khata Ledger',
+    'Ledger utilization and available credit correctly computed',
+    () => {
+      const creditLimit = 100000;
+      const outstanding = 35000;
+      const availableCredit = Math.max(0, creditLimit - outstanding);
+      const utilizationPct = Math.round((outstanding / creditLimit) * 1000) / 10;
 
-    assertEqual(availableCredit, 65000, 'Available credit must be credit limit minus outstanding');
-    assertEqual(utilizationPct, 35.0, 'Credit utilization percentage must be 35.0%');
-  });
+      assertEqual(
+        availableCredit,
+        65000,
+        'Available credit must be credit limit minus outstanding'
+      );
+      assertEqual(utilizationPct, 35.0, 'Credit utilization percentage must be 35.0%');
+    }
+  );
 
-  await runTest('Khata Ledger', 'Settlement payment decreases outstanding balance and logs passbook credit', () => {
-    let currentOutstanding = 35000;
-    const paymentAmount = 15000;
-    const previousOutstanding = currentOutstanding;
+  await runTest(
+    'Khata Ledger',
+    'Settlement payment decreases outstanding balance and logs passbook credit',
+    () => {
+      let currentOutstanding = 35000;
+      const paymentAmount = 15000;
+      const previousOutstanding = currentOutstanding;
 
-    // Simulate payment application
-    currentOutstanding = Math.max(0, currentOutstanding - paymentAmount);
+      // Simulate payment application
+      currentOutstanding = Math.max(0, currentOutstanding - paymentAmount);
 
-    assertEqual(currentOutstanding, 20000, 'Outstanding balance should be reduced to 20000');
-    assertEqual(previousOutstanding - paymentAmount, currentOutstanding, 'Delta must equal exact payment amount');
-  });
+      assertEqual(currentOutstanding, 20000, 'Outstanding balance should be reduced to 20000');
+      assertEqual(
+        previousOutstanding - paymentAmount,
+        currentOutstanding,
+        'Delta must equal exact payment amount'
+      );
+    }
+  );
 
-  await runTest('B2B Tax Invoice', 'Rule 46 CGST Compliance: 50/50 CGST/SGST intra-state split (State Code 23)', () => {
-    const taxableSubtotal = 12500;
-    const gstRate = 18; // 18% GST slab
-    const totalGst = (taxableSubtotal * gstRate) / 100; // 2250
-    const cgstRate = gstRate / 2; // 9%
-    const sgstRate = gstRate / 2; // 9%
-    const cgstAmount = totalGst / 2; // 1125
-    const sgstAmount = totalGst / 2; // 1125
-    const invoiceGrandTotal = taxableSubtotal + totalGst; // 14750
+  await runTest(
+    'B2B Tax Invoice',
+    'Rule 46 CGST Compliance: 50/50 CGST/SGST intra-state split (State Code 23)',
+    () => {
+      const taxableSubtotal = 12500;
+      const gstRate = 18; // 18% GST slab
+      const totalGst = (taxableSubtotal * gstRate) / 100; // 2250
+      const cgstRate = gstRate / 2; // 9%
+      const sgstRate = gstRate / 2; // 9%
+      const cgstAmount = totalGst / 2; // 1125
+      const sgstAmount = totalGst / 2; // 1125
+      const invoiceGrandTotal = taxableSubtotal + totalGst; // 14750
 
-    assertEqual(totalGst, 2250, 'Total GST must be 2250');
-    assertEqual(cgstRate, 9, 'CGST rate must be 9%');
-    assertEqual(sgstRate, 9, 'SGST rate must be 9%');
-    assertEqual(cgstAmount, 1125, 'CGST amount must be 1125');
-    assertEqual(sgstAmount, 1125, 'SGST amount must be 1125');
-    assertEqual(invoiceGrandTotal, 14750, 'Grand total must equal taxable + total GST');
-  });
+      assertEqual(totalGst, 2250, 'Total GST must be 2250');
+      assertEqual(cgstRate, 9, 'CGST rate must be 9%');
+      assertEqual(sgstRate, 9, 'SGST rate must be 9%');
+      assertEqual(cgstAmount, 1125, 'CGST amount must be 1125');
+      assertEqual(sgstAmount, 1125, 'SGST amount must be 1125');
+      assertEqual(invoiceGrandTotal, 14750, 'Grand total must equal taxable + total GST');
+    }
+  );
 
   await runTest('B2B Tax Invoice', 'HSN Chapter Classification mapping for FMCG catalogue', () => {
     const testCases: Record<string, string> = {
@@ -314,177 +364,238 @@ export async function runAllTests() {
     };
 
     for (const [sku, expectedHsn] of Object.entries(testCases)) {
-      assertEqual(HSN_CODE_MAP[sku], expectedHsn, `HSN code for SKU ${sku} must match Chapter ${expectedHsn}`);
+      assertEqual(
+        HSN_CODE_MAP[sku],
+        expectedHsn,
+        `HSN code for SKU ${sku} must match Chapter ${expectedHsn}`
+      );
     }
   });
 
-  await runTest('Order Lifecycle', 'State transitions obey PENDING -> APPROVED -> DISPATCHED -> DELIVERED lifecycle', () => {
-    const validTransitions: Record<string, string[]> = {
-      PENDING: ['APPROVED', 'REJECTED'],
-      APPROVED: ['DISPATCHED', 'REJECTED'],
-      DISPATCHED: ['DELIVERED'],
-      DELIVERED: [],
-      REJECTED: [],
-    };
+  await runTest(
+    'Order Lifecycle',
+    'State transitions obey PENDING -> APPROVED -> DISPATCHED -> DELIVERED lifecycle',
+    () => {
+      const validTransitions: Record<string, string[]> = {
+        PENDING: ['APPROVED', 'REJECTED'],
+        APPROVED: ['DISPATCHED', 'REJECTED'],
+        DISPATCHED: ['DELIVERED'],
+        DELIVERED: [],
+        REJECTED: [],
+      };
 
-    assert(validTransitions['PENDING'].includes('APPROVED'), 'PENDING can transition to APPROVED');
-    assert(validTransitions['APPROVED'].includes('DISPATCHED'), 'APPROVED can transition to DISPATCHED');
-    assert(validTransitions['DISPATCHED'].includes('DELIVERED'), 'DISPATCHED can transition to DELIVERED');
-    assert(!validTransitions['DELIVERED'].includes('PENDING'), 'DELIVERED cannot revert to PENDING');
-  });
+      assert(
+        validTransitions['PENDING'].includes('APPROVED'),
+        'PENDING can transition to APPROVED'
+      );
+      assert(
+        validTransitions['APPROVED'].includes('DISPATCHED'),
+        'APPROVED can transition to DISPATCHED'
+      );
+      assert(
+        validTransitions['DISPATCHED'].includes('DELIVERED'),
+        'DISPATCHED can transition to DELIVERED'
+      );
+      assert(
+        !validTransitions['DELIVERED'].includes('PENDING'),
+        'DELIVERED cannot revert to PENDING'
+      );
+    }
+  );
 
-  await runTest('Repeat Ordering', '1-Click Repeat Order clones item list with fresh order timestamp and PENDING status', () => {
-    const pastOrder = {
-      id: 'ord-past-001',
-      orderCode: 'ORD-20261101-001',
-      status: 'DELIVERED',
-      items: [
-        { sku: 'PARLE-G-80G', quantity: 20, unitPrice: 9.5 },
-        { sku: 'SURF-EXCEL-500G', quantity: 5, unitPrice: 110.0 },
-      ],
-    };
+  await runTest(
+    'Repeat Ordering',
+    '1-Click Repeat Order clones item list with fresh order timestamp and PENDING status',
+    () => {
+      const pastOrder = {
+        id: 'ord-past-001',
+        orderCode: 'ORD-20261101-001',
+        status: 'DELIVERED',
+        items: [
+          { sku: 'PARLE-G-80G', quantity: 20, unitPrice: 9.5 },
+          { sku: 'SURF-EXCEL-500G', quantity: 5, unitPrice: 110.0 },
+        ],
+      };
 
-    // Reorder operation simulation
-    const repeatedOrder = {
-      id: `ord-new-${Date.now()}`,
-      orderCode: `ORD-${Date.now().toString().slice(-6)}`,
-      status: 'PENDING',
-      notes: `Reorder based on order #${pastOrder.orderCode}`,
-      items: pastOrder.items.map((it) => ({
-        sku: it.sku,
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-      })),
-    };
+      // Reorder operation simulation
+      const repeatedOrder = {
+        id: `ord-new-${Date.now()}`,
+        orderCode: `ORD-${Date.now().toString().slice(-6)}`,
+        status: 'PENDING',
+        notes: `Reorder based on order #${pastOrder.orderCode}`,
+        items: pastOrder.items.map((it) => ({
+          sku: it.sku,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+        })),
+      };
 
-    assertEqual(repeatedOrder.status, 'PENDING', 'Repeated order must start in PENDING status');
-    assertEqual(repeatedOrder.items.length, 2, 'Repeated order must preserve all item lines');
-    assertEqual(repeatedOrder.items[0].sku, 'PARLE-G-80G', 'First SKU must match');
-    assertEqual(repeatedOrder.items[1].quantity, 5, 'Second item quantity must match');
-    assert(repeatedOrder.notes.includes(pastOrder.orderCode), 'Notes must reference previous order');
-  });
+      assertEqual(repeatedOrder.status, 'PENDING', 'Repeated order must start in PENDING status');
+      assertEqual(repeatedOrder.items.length, 2, 'Repeated order must preserve all item lines');
+      assertEqual(repeatedOrder.items[0].sku, 'PARLE-G-80G', 'First SKU must match');
+      assertEqual(repeatedOrder.items[1].quantity, 5, 'Second item quantity must match');
+      assert(
+        repeatedOrder.notes.includes(pastOrder.orderCode),
+        'Notes must reference previous order'
+      );
+    }
+  );
 
   // 8. TASK 7: EXECUTIVE ANALYTICS, CHURN RADAR & FINANCIAL RISK TESTS
-  await runTest('Executive Analytics', 'GMV, AOV and fulfillment percentage mathematically verified', () => {
-    const orders = [
-      { id: '1', finalAmount: 15000, status: 'APPROVED' },
-      { id: '2', finalAmount: 25000, status: 'DELIVERED' },
-      { id: '3', finalAmount: 10000, status: 'DISPATCHED' },
-      { id: '4', finalAmount: 8000, status: 'PENDING' },
-      { id: '5', finalAmount: 12000, status: 'REJECTED' },
-    ];
+  await runTest(
+    'Executive Analytics',
+    'GMV, AOV and fulfillment percentage mathematically verified',
+    () => {
+      const orders = [
+        { id: '1', finalAmount: 15000, status: 'APPROVED' },
+        { id: '2', finalAmount: 25000, status: 'DELIVERED' },
+        { id: '3', finalAmount: 10000, status: 'DISPATCHED' },
+        { id: '4', finalAmount: 8000, status: 'PENDING' },
+        { id: '5', finalAmount: 12000, status: 'REJECTED' },
+      ];
 
-    const totalOrders = orders.length; // 5
-    const totalGmv = orders.reduce((sum, o) => sum + o.finalAmount, 0); // 70000
-    const aov = Math.round((totalGmv / totalOrders) * 100) / 100; // 14000
-    const fulfilledCount = orders.filter((o) =>
-      ['APPROVED', 'DISPATCHED', 'DELIVERED'].includes(o.status)
-    ).length; // 3
-    const fulfillmentRate = Math.round((fulfilledCount / totalOrders) * 1000) / 10; // 60.0%
+      const totalOrders = orders.length; // 5
+      const totalGmv = orders.reduce((sum, o) => sum + o.finalAmount, 0); // 70000
+      const aov = Math.round((totalGmv / totalOrders) * 100) / 100; // 14000
+      const fulfilledCount = orders.filter((o) =>
+        ['APPROVED', 'DISPATCHED', 'DELIVERED'].includes(o.status)
+      ).length; // 3
+      const fulfillmentRate = Math.round((fulfilledCount / totalOrders) * 1000) / 10; // 60.0%
 
-    assertEqual(totalGmv, 70000, 'Total GMV must be 70000');
-    assertEqual(aov, 14000, 'Average Order Value must be 14000');
-    assertEqual(fulfillmentRate, 60.0, 'Fulfillment rate must be 60.0%');
-  });
+      assertEqual(totalGmv, 70000, 'Total GMV must be 70000');
+      assertEqual(aov, 14000, 'Average Order Value must be 14000');
+      assertEqual(fulfillmentRate, 60.0, 'Fulfillment rate must be 60.0%');
+    }
+  );
 
-  await runTest('Executive Analytics', 'Brand revenue share correctly computes percentage of total sales', () => {
-    const brandSales = {
-      Parle: 30000,
-      Britannia: 20000,
-      Nestle: 15000,
-      HUL: 10000,
-    };
-    const totalSales = 75000;
+  await runTest(
+    'Executive Analytics',
+    'Brand revenue share correctly computes percentage of total sales',
+    () => {
+      const brandSales = {
+        Parle: 30000,
+        Britannia: 20000,
+        Nestle: 15000,
+        HUL: 10000,
+      };
+      const totalSales = 75000;
 
-    const parleShare = Math.round((brandSales.Parle / totalSales) * 1000) / 10;
-    const britanniaShare = Math.round((brandSales.Britannia / totalSales) * 1000) / 10;
+      const parleShare = Math.round((brandSales.Parle / totalSales) * 1000) / 10;
+      const britanniaShare = Math.round((brandSales.Britannia / totalSales) * 1000) / 10;
 
-    assertEqual(parleShare, 40.0, 'Parle share must be 40.0%');
-    assertEqual(britanniaShare, 26.7, 'Britannia share must be 26.7%');
-  });
+      assertEqual(parleShare, 40.0, 'Parle share must be 40.0%');
+      assertEqual(britanniaShare, 26.7, 'Britannia share must be 26.7%');
+    }
+  );
 
-  await runTest('Churn Radar', '14-day inactivity threshold correctly identifies dormant kirana stores', () => {
-    const now = new Date('2026-11-07T12:00:00Z');
-    const retailers = [
-      { id: 'r1', shopName: 'Active Kirana', lastOrderDate: new Date('2026-11-03T12:00:00Z') }, // 4 days ago
-      { id: 'r2', shopName: 'Dormant Kirana 1', lastOrderDate: new Date('2026-10-20T12:00:00Z') }, // 18 days ago
-      { id: 'r3', shopName: 'Critical Kirana 2', lastOrderDate: new Date('2026-10-10T12:00:00Z') }, // 28 days ago
-    ];
+  await runTest(
+    'Churn Radar',
+    '14-day inactivity threshold correctly identifies dormant kirana stores',
+    () => {
+      const now = new Date('2026-11-07T12:00:00Z');
+      const retailers = [
+        { id: 'r1', shopName: 'Active Kirana', lastOrderDate: new Date('2026-11-03T12:00:00Z') }, // 4 days ago
+        { id: 'r2', shopName: 'Dormant Kirana 1', lastOrderDate: new Date('2026-10-20T12:00:00Z') }, // 18 days ago
+        {
+          id: 'r3',
+          shopName: 'Critical Kirana 2',
+          lastOrderDate: new Date('2026-10-10T12:00:00Z'),
+        }, // 28 days ago
+      ];
 
-    const threshold = 14;
-    const dormantList = retailers.filter((r) => {
-      const days = Math.floor((now.getTime() - r.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
-      return days >= threshold;
-    });
+      const threshold = 14;
+      const dormantList = retailers.filter((r) => {
+        const days = Math.floor(
+          (now.getTime() - r.lastOrderDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return days >= threshold;
+      });
 
-    assertEqual(dormantList.length, 2, 'Exactly 2 shops must be flagged as dormant');
-    assertEqual(dormantList[0].id, 'r2', 'r2 must be identified');
-    assertEqual(dormantList[1].id, 'r3', 'r3 must be identified');
-  });
+      assertEqual(dormantList.length, 2, 'Exactly 2 shops must be flagged as dormant');
+      assertEqual(dormantList[0].id, 'r2', 'r2 must be identified');
+      assertEqual(dormantList[1].id, 'r3', 'r3 must be identified');
+    }
+  );
 
-  await runTest('Churn Radar', 'Personalized FMCG WhatsApp nudge URL is formatted with valid phone and encoded message', () => {
-    const rawPhone = '9876543210';
-    const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
-    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-    const shopName = 'Shri Ganesh Store';
-    const ownerName = 'Ramesh Ji';
-    const daysDormant = 18;
+  await runTest(
+    'Churn Radar',
+    'Personalized FMCG WhatsApp nudge URL is formatted with valid phone and encoded message',
+    () => {
+      const rawPhone = '9876543210';
+      const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+      const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const shopName = 'Shri Ganesh Store';
+      const ownerName = 'Ramesh Ji';
+      const daysDormant = 18;
 
-    const message = `Namaste ${ownerName}! SupplySetu Distributors Jabalpur misses ${shopName}. We noticed you haven't placed an order in ${daysDormant} days. Special schemes are live today!`;
-    const whatsAppUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+      const message = `Namaste ${ownerName}! SupplySetu Distributors Jabalpur misses ${shopName}. We noticed you haven't placed an order in ${daysDormant} days. Special schemes are live today!`;
+      const whatsAppUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
 
-    assert(whatsAppUrl.startsWith('https://wa.me/919876543210'), 'Must format with 91 prefix');
-    assert(whatsAppUrl.includes('Shri%20Ganesh%20Store'), 'Must contain URL encoded shop name');
-    assert(whatsAppUrl.includes('18%20days'), 'Must contain dormancy days');
-  });
+      assert(whatsAppUrl.startsWith('https://wa.me/919876543210'), 'Must format with 91 prefix');
+      assert(whatsAppUrl.includes('Shri%20Ganesh%20Store'), 'Must contain URL encoded shop name');
+      assert(whatsAppUrl.includes('18%20days'), 'Must contain dormancy days');
+    }
+  );
 
-  await runTest('Financial Risk', 'Receivables aging correctly segments balances into 0-15d, 16-30d, 30+d brackets', () => {
-    const receivables = [
-      { amount: 5000, daysPastDue: 8 },
-      { amount: 12000, daysPastDue: 14 },
-      { amount: 8000, daysPastDue: 22 },
-      { amount: 15000, daysPastDue: 45 },
-    ];
+  await runTest(
+    'Financial Risk',
+    'Receivables aging correctly segments balances into 0-15d, 16-30d, 30+d brackets',
+    () => {
+      const receivables = [
+        { amount: 5000, daysPastDue: 8 },
+        { amount: 12000, daysPastDue: 14 },
+        { amount: 8000, daysPastDue: 22 },
+        { amount: 15000, daysPastDue: 45 },
+      ];
 
-    let bucket0to15 = 0;
-    let bucket16to30 = 0;
-    let bucket30plus = 0;
+      let bucket0to15 = 0;
+      let bucket16to30 = 0;
+      let bucket30plus = 0;
 
-    receivables.forEach((r) => {
-      if (r.daysPastDue <= 15) bucket0to15 += r.amount;
-      else if (r.daysPastDue <= 30) bucket16to30 += r.amount;
-      else bucket30plus += r.amount;
-    });
+      receivables.forEach((r) => {
+        if (r.daysPastDue <= 15) bucket0to15 += r.amount;
+        else if (r.daysPastDue <= 30) bucket16to30 += r.amount;
+        else bucket30plus += r.amount;
+      });
 
-    assertEqual(bucket0to15, 17000, '0-15 days bucket must be 17000 (5000 + 12000)');
-    assertEqual(bucket16to30, 8000, '16-30 days bucket must be 8000');
-    assertEqual(bucket30plus, 15000, '30+ days bucket must be 15000');
-  });
+      assertEqual(bucket0to15, 17000, '0-15 days bucket must be 17000 (5000 + 12000)');
+      assertEqual(bucket16to30, 8000, '16-30 days bucket must be 8000');
+      assertEqual(bucket30plus, 15000, '30+ days bucket must be 15000');
+    }
+  );
 
-  await runTest('Financial Risk', 'High credit utilization (>=80%) correctly flagged with warning status', () => {
-    const checkStatus = (creditLimit: number, outstanding: number) => {
-      const utilPct = creditLimit > 0 ? (outstanding / creditLimit) * 100 : 0;
-      if (outstanding > creditLimit) return 'EXCEEDED';
-      if (utilPct >= 80) return 'WARNING';
-      return 'HEALTHY';
-    };
+  await runTest(
+    'Financial Risk',
+    'High credit utilization (>=80%) correctly flagged with warning status',
+    () => {
+      const checkStatus = (creditLimit: number, outstanding: number) => {
+        const utilPct = creditLimit > 0 ? (outstanding / creditLimit) * 100 : 0;
+        if (outstanding > creditLimit) return 'EXCEEDED';
+        if (utilPct >= 80) return 'WARNING';
+        return 'HEALTHY';
+      };
 
-    assertEqual(checkStatus(50000, 30000), 'HEALTHY', '60% utilization must be HEALTHY');
-    assertEqual(checkStatus(50000, 42000), 'WARNING', '84% utilization must be WARNING');
-    assertEqual(checkStatus(50000, 55000), 'EXCEEDED', '110% utilization must be EXCEEDED');
-  });
+      assertEqual(checkStatus(50000, 30000), 'HEALTHY', '60% utilization must be HEALTHY');
+      assertEqual(checkStatus(50000, 42000), 'WARNING', '84% utilization must be WARNING');
+      assertEqual(checkStatus(50000, 55000), 'EXCEEDED', '110% utilization must be EXCEEDED');
+    }
+  );
 
-  await runTest('Salesman Performance', 'Daily beat quota realization and spot commission correctly calculated', () => {
-    const dailyTarget = 45000;
-    const gmvToday = 38250;
-    const commissionRate = 0.015; // 1.5%
+  await runTest(
+    'Salesman Performance',
+    'Daily beat quota realization and spot commission correctly calculated',
+    () => {
+      const dailyTarget = 45000;
+      const gmvToday = 38250;
+      const commissionRate = 0.015; // 1.5%
 
-    const realizationPct = Math.round((gmvToday / dailyTarget) * 1000) / 10;
-    const commissionEarned = Math.round(gmvToday * commissionRate);
+      const realizationPct = Math.round((gmvToday / dailyTarget) * 1000) / 10;
+      const commissionEarned = Math.round(gmvToday * commissionRate);
 
-    assertEqual(realizationPct, 85.0, 'Realization percentage must be 85.0%');
-    assertEqual(commissionEarned, 574, '1.5% commission on 38250 must be 574');
-  });
+      assertEqual(realizationPct, 85.0, 'Realization percentage must be 85.0%');
+      assertEqual(commissionEarned, 574, '1.5% commission on 38250 must be 574');
+    }
+  );
 
   // 9. PRINT SUMMARY REPORT
   console.log('----------------------------------------------------');
@@ -498,7 +609,9 @@ export async function runAllTests() {
     }
   }
   console.log('----------------------------------------------------');
-  console.log(`Total: ${results.length} | Passed: ${passedCount} | Failed: ${results.length - passedCount}`);
+  console.log(
+    `Total: ${results.length} | Passed: ${passedCount} | Failed: ${results.length - passedCount}`
+  );
 
   if (passedCount !== results.length) {
     throw new Error('Some verification tests failed!');

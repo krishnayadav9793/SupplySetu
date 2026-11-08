@@ -49,7 +49,9 @@ export const SalesmanService = {
     ];
   },
 
-  async createSalesman(data: CreateSalesmanData): Promise<{ success: boolean; data?: any; message?: string }> {
+  async createSalesman(
+    data: CreateSalesmanData
+  ): Promise<{ success: boolean; data?: any; message?: string }> {
     try {
       const res = await apiFetch<any>('/salesmen', {
         method: 'POST',

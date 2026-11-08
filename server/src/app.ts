@@ -62,7 +62,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Start Server
-if (config.nodeEnv !== 'test') {
+if (config.nodeEnv !== 'test' && !process.env.VITEST) {
   app.listen(config.port, () => {
     console.log(`[SupplySetu Server] running on http://localhost:${config.port}`);
   });

@@ -53,9 +53,15 @@ export class AnalyticsController {
   /**
    * GET /api/analytics/salesman-performance
    */
-  static async getSalesmanPerformance(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  static async getSalesmanPerformance(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
-      const salesmanId = (req.query.salesmanId as string) || (req.user?.role === 'SALESMAN' ? req.user.id : undefined);
+      const salesmanId =
+        (req.query.salesmanId as string) ||
+        (req.user?.role === 'SALESMAN' ? req.user.id : undefined);
       const data = await AnalyticsService.getSalesmanPerformance(salesmanId);
       res.status(200).json({
         success: true,

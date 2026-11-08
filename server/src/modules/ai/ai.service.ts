@@ -31,9 +31,9 @@ export class AiOrderCaptureService {
     const apiKey = process.env.GEMINI_API_KEY;
     const isConfigured = Boolean(
       apiKey &&
-        apiKey.trim().length > 15 &&
-        !apiKey.includes('your_gemini_api_key') &&
-        !apiKey.startsWith('AIzaSy_placeholder')
+      apiKey.trim().length > 15 &&
+      !apiKey.includes('your_gemini_api_key') &&
+      !apiKey.startsWith('AIzaSy_placeholder')
     );
     const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
@@ -77,18 +77,23 @@ export class AiOrderCaptureService {
 
     // 2. Perform AI / LLM extraction
     let extraction: AiOrderExtraction;
-    let engineUsed: 'GEMINI_2_5_FLASH' | 'LOCAL_FMCG_PARSER' = 'LOCAL_FMCG_PARSER';
+    let engineUsed: 'GEMINI_2_5_FLASH' | 'LOCAL_FMCG_PARSER';
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey && apiKey.trim().length > 15) {
       try {
         extraction = await Promise.race([
           this.extractWithGemini(trimmedMessage, products, apiKey),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Gemini API call timeout (8s)')), 8000)),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Gemini API call timeout (8s)')), 8000)
+          ),
         ]);
         engineUsed = 'GEMINI_2_5_FLASH';
       } catch (err) {
-        console.warn('[AI Service] Gemini API call failed, using intelligent FMCG parser fallback:', err);
+        console.warn(
+          '[AI Service] Gemini API call failed, using intelligent FMCG parser fallback:',
+          err
+        );
         extraction = this.extractWithLocalParser(trimmedMessage, products);
         engineUsed = 'LOCAL_FMCG_PARSER';
       }
@@ -131,22 +136,31 @@ export class AiOrderCaptureService {
     });
 
     let extraction: AiOrderExtraction;
-    let engineUsed: 'GEMINI_2_5_FLASH' | 'LOCAL_FMCG_PARSER' = 'LOCAL_FMCG_PARSER';
+    let engineUsed: 'GEMINI_2_5_FLASH' | 'LOCAL_FMCG_PARSER';
     const apiKey = process.env.GEMINI_API_KEY;
 
-    const isSupportedMime = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(
-      mimeType.toLowerCase()
-    );
+    const isSupportedMime = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+    ].includes(mimeType.toLowerCase());
 
     if (imageBase64 && apiKey && apiKey.trim().length > 15 && isSupportedMime) {
       try {
         extraction = await Promise.race([
           this.extractWithGeminiVision(imageBase64, mimeType, textNotes, products, apiKey),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Gemini Vision API timeout (8s)')), 8000)),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Gemini Vision API timeout (8s)')), 8000)
+          ),
         ]);
         engineUsed = 'GEMINI_2_5_FLASH';
       } catch (err) {
-        console.warn('[AI Service] Gemini Vision call failed, using intelligent multimodal fallback:', err);
+        console.warn(
+          '[AI Service] Gemini Vision call failed, using intelligent multimodal fallback:',
+          err
+        );
         extraction = this.extractMultimodalFallback(imageBase64, textNotes, products);
         engineUsed = 'LOCAL_FMCG_PARSER';
       }
@@ -446,15 +460,29 @@ CRITICAL RULES:
     const rules = [
       {
         sku: 'SKU-BS-075',
-        patterns: [/biscuit\s*chhot[ae]/i, /chhot[ae]\s*biscuit/i, /glucose\s*biscuit\s*75/i, /SKU-BS-075/i],
+        patterns: [
+          /biscuit\s*chhot[ae]/i,
+          /chhot[ae]\s*biscuit/i,
+          /glucose\s*biscuit\s*75/i,
+          /SKU-BS-075/i,
+        ],
       },
       {
         sku: 'SKU-DT-1KG',
-        patterns: [/washing\s*powder\s*(?:1\s*(?:kilo|kg))?/i, /detergent\s*(?:powder\s*)?1\s*(?:kilo|kg)/i, /SKU-DT-1KG/i],
+        patterns: [
+          /washing\s*powder\s*(?:1\s*(?:kilo|kg))?/i,
+          /detergent\s*(?:powder\s*)?1\s*(?:kilo|kg)/i,
+          /SKU-DT-1KG/i,
+        ],
       },
       {
         sku: 'SKU-TE-250',
-        patterns: [/chai\s*patti\s*(?:250(?:\s*wala)?)?/i, /tea\s*(?:leaf\s*)?250/i, /SKU-TE-250/i, /chai\s*patti/i],
+        patterns: [
+          /chai\s*patti\s*(?:250(?:\s*wala)?)?/i,
+          /tea\s*(?:leaf\s*)?250/i,
+          /SKU-TE-250/i,
+          /chai\s*patti/i,
+        ],
       },
       {
         sku: 'PARLE-G-80G',
@@ -523,7 +551,7 @@ CRITICAL RULES:
 
       // Match against SKU patterns
       let matchedSku: string | null = null;
-      let confidence = 0.95;
+      const confidence = 0.95;
 
       for (const rule of rules) {
         for (const pat of rule.patterns) {
@@ -649,7 +677,8 @@ CRITICAL RULES:
           sku: alt.skuCode,
           productName: alt.name,
           brand: alt.brand,
-          rate: PricingService.calculatePrice(alt.basePrice, alt.mrp, alt.gstRate, retailerTier).dealerPrice,
+          rate: PricingService.calculatePrice(alt.basePrice, alt.mrp, alt.gstRate, retailerTier)
+            .dealerPrice,
           stock: alt.inventory?.stockQuantity ?? 0,
           confidence: 0.75,
         }));

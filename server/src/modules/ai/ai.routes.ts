@@ -11,7 +11,11 @@ router.get('/status', AiOrderCaptureController.getStatus);
 router.post('/order-capture', optionalAuthenticate, AiOrderCaptureController.captureOrder);
 
 // Process multimodal order (handwritten Parchi photo, bill scan, voice audio notes)
-router.post('/order-capture-multimodal', optionalAuthenticate, AiOrderCaptureController.captureMultimodalOrder);
+router.post(
+  '/order-capture-multimodal',
+  optionalAuthenticate,
+  AiOrderCaptureController.captureMultimodalOrder
+);
 
 // Provide preset sample Kirana WhatsApp prompts for quick demonstration
 router.get('/samples', AiOrderCaptureController.getSamplePrompts);

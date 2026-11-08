@@ -158,7 +158,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [showAddSalesmanModal, setShowAddSalesmanModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedSalesmanForAssign, setSelectedSalesmanForAssign] = useState<SalesmanRecord | null>(null);
+  const [selectedSalesmanForAssign, setSelectedSalesmanForAssign] = useState<SalesmanRecord | null>(
+    null
+  );
   const [assignedShopIdsForModal, setAssignedShopIdsForModal] = useState<string[]>([]);
 
   // Add Salesman Form
@@ -186,7 +188,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('All');
-  const [productStockFilter, setProductStockFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all');
+  const [productStockFilter, setProductStockFilter] = useState<
+    'all' | 'inStock' | 'lowStock' | 'outOfStock'
+  >('all');
 
   // Add/Edit Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -218,7 +222,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   const [loadingSchemes, setLoadingSchemes] = useState(false);
   const [showAddSchemeModal, setShowAddSchemeModal] = useState(false);
   const [schemeName, setSchemeName] = useState('');
-  const [schemeType, setSchemeType] = useState<'BUY_X_GET_Y_FREE' | 'PERCENTAGE_DISCOUNT' | 'FLAT_DISCOUNT'>('BUY_X_GET_Y_FREE');
+  const [schemeType, setSchemeType] = useState<
+    'BUY_X_GET_Y_FREE' | 'PERCENTAGE_DISCOUNT' | 'FLAT_DISCOUNT'
+  >('BUY_X_GET_Y_FREE');
   const [schemeProductId, setSchemeProductId] = useState('');
   const [schemeMinQty, setSchemeMinQty] = useState('10');
   const [schemeFreeQty, setSchemeFreeQty] = useState('1');
@@ -383,7 +389,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   };
 
   const handleReject = async (orderId: string) => {
-    const reason = prompt('Please enter rejection reason:', 'Credit limit exceeded / Out of beat zone');
+    const reason = prompt(
+      'Please enter rejection reason:',
+      'Credit limit exceeded / Out of beat zone'
+    );
     if (!reason) return;
 
     try {
@@ -403,7 +412,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
   const handleDispatch = async (orderId: string) => {
     try {
-      const updated = await OrderService.dispatchOrder(orderId, 'Dispatched via Delivery Van #MP20-GA-4892');
+      const updated = await OrderService.dispatchOrder(
+        orderId,
+        'Dispatched via Delivery Van #MP20-GA-4892'
+      );
       setActionSuccessMessage(`Order ${updated.orderNumber} dispatched for delivery!`);
       setTimeout(() => setActionSuccessMessage(null), 3500);
 
@@ -419,7 +431,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
   const handleDeliver = async (orderId: string) => {
     try {
-      const updated = await OrderService.deliverOrder(orderId, 'Delivered and acknowledged by kirana shopkeeper');
+      const updated = await OrderService.deliverOrder(
+        orderId,
+        'Delivered and acknowledged by kirana shopkeeper'
+      );
       setActionSuccessMessage(`Order ${updated.orderNumber} marked as delivered!`);
       setTimeout(() => setActionSuccessMessage(null), 3500);
 
@@ -680,7 +695,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
     try {
       const res = await ProductService.updateStock(stockModalProduct.id, stockModalQuantity);
       if (res.success) {
-        setActionSuccessMessage(`Stock updated for ${stockModalProduct.name} (${stockModalQuantity} boxes)`);
+        setActionSuccessMessage(
+          `Stock updated for ${stockModalProduct.name} (${stockModalQuantity} boxes)`
+        );
         setTimeout(() => setActionSuccessMessage(null), 3500);
         setShowStockModal(false);
         loadCatalogueData();
@@ -779,7 +796,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
     try {
       const res = await ProductService.toggleSchemeStatus(scheme.id, !scheme.isActive);
       if (res.success) {
-        setActionSuccessMessage(`Scheme '${scheme.name}' ${!scheme.isActive ? 'activated' : 'paused'}!`);
+        setActionSuccessMessage(
+          `Scheme '${scheme.name}' ${!scheme.isActive ? 'activated' : 'paused'}!`
+        );
         setTimeout(() => setActionSuccessMessage(null), 3500);
         loadSchemesData();
         loadCatalogueData();
@@ -873,7 +892,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
   // Margin preview calculation for product modal
   const calcMrp = parseFloat(prodMrp) || 0;
   const calcBase = parseFloat(prodBasePrice) || 0;
-  const calcMargin = calcMrp > 0 && calcBase > 0 ? Math.round(((calcMrp - calcBase) / calcMrp) * 1000) / 10 : 0;
+  const calcMargin =
+    calcMrp > 0 && calcBase > 0 ? Math.round(((calcMrp - calcBase) / calcMrp) * 1000) / 10 : 0;
 
   // ==========================================
   // TAB 1: KIRANA NETWORK & FIELD SALES FORCE
@@ -887,7 +907,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <CheckCircle2 className="w-4 h-4" />
               <span>{actionSuccessMessage}</span>
             </div>
-            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setActionSuccessMessage(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               &times;
             </button>
           </div>
@@ -900,7 +923,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <span>Field Sales Force & Kirana Network</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Manage your on-ground beat salesmen, assigned shop beats, and retailer credit khata in Jabalpur territory.
+              Manage your on-ground beat salesmen, assigned shop beats, and retailer credit khata in
+              Jabalpur territory.
             </p>
           </div>
 
@@ -965,7 +989,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               ₹{(totalOutstanding / 100000).toFixed(1)} Lakhs
             </p>
             <p className="text-[11px] text-slate-400 mt-1">
-              {totalCreditLimit > 0 ? Math.round((totalOutstanding / totalCreditLimit) * 100) : 0}% aggregate utilization
+              {totalCreditLimit > 0 ? Math.round((totalOutstanding / totalCreditLimit) * 100) : 0}%
+              aggregate utilization
             </p>
           </div>
         </div>
@@ -981,7 +1006,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                 </span>
               </h3>
               <p className="text-[11px] text-slate-400">
-                Field salesmen who log into the mobile app to punch offline orders at kirana counters.
+                Field salesmen who log into the mobile app to punch offline orders at kirana
+                counters.
               </p>
             </div>
             <button
@@ -1004,7 +1030,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <span>{salesman.name}</span>
-                        {salesman.isActive && <span className="h-2 w-2 rounded-full bg-emerald-500"></span>}
+                        {salesman.isActive && (
+                          <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        )}
                       </h4>
                       <p className="text-xs font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                         <Phone className="w-3 h-3 text-slate-400" />
@@ -1021,7 +1049,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                     <div>
                       <p className="text-[10px] text-slate-400">Assigned Beat Shops</p>
                       <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                        {salesman.assignedShopsCount || (salesman.shops ? salesman.shops.length : 0)} Kiranas
+                        {salesman.assignedShopsCount ||
+                          (salesman.shops ? salesman.shops.length : 0)}{' '}
+                        Kiranas
                       </p>
                     </div>
                     <div>
@@ -1035,7 +1065,12 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   <div className="mt-3 p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-500/20 text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <Lock className="w-3 h-3 text-emerald-500" />
-                      <span>Password: <strong className="font-mono text-emerald-700 dark:text-emerald-400">password123</strong></span>
+                      <span>
+                        Password:{' '}
+                        <strong className="font-mono text-emerald-700 dark:text-emerald-400">
+                          password123
+                        </strong>
+                      </span>
                     </div>
                     <span className="text-[10px] text-slate-400">Default</span>
                   </div>
@@ -1113,7 +1148,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                       : 0;
 
                   return (
-                    <tr key={r.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors">
+                    <tr
+                      key={r.id}
+                      className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors"
+                    >
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-2">
                           <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
@@ -1122,15 +1160,21 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           <div>
                             <p className="font-bold text-slate-900 dark:text-white">{r.shopName}</p>
                             {r.gstNumber && (
-                              <p className="text-[10px] font-mono text-slate-400">GSTIN: {r.gstNumber}</p>
+                              <p className="text-[10px] font-mono text-slate-400">
+                                GSTIN: {r.gstNumber}
+                              </p>
                             )}
                           </div>
                         </div>
                       </td>
 
                       <td className="py-3 px-3">
-                        <p className="font-medium text-slate-800 dark:text-slate-200">{r.ownerName}</p>
-                        <p className="text-[11px] text-slate-400 font-mono">+91 {r.phone || '9893000000'}</p>
+                        <p className="font-medium text-slate-800 dark:text-slate-200">
+                          {r.ownerName}
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-mono">
+                          +91 {r.phone || '9893000000'}
+                        </p>
                       </td>
 
                       <td className="py-3 px-3">
@@ -1143,8 +1187,12 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             <div>
-                              <p className="font-semibold text-slate-900 dark:text-white">{r.salesman.name}</p>
-                              <p className="text-[10px] text-slate-400 font-mono">{r.salesman.phone}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {r.salesman.name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                {r.salesman.phone}
+                              </p>
                             </div>
                           </div>
                         ) : (
@@ -1169,8 +1217,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                               utilization > 90
                                 ? 'bg-rose-500'
                                 : utilization > 70
-                                ? 'bg-amber-500'
-                                : 'bg-emerald-500'
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
                             }`}
                             style={{ width: `${Math.min(100, utilization)}%` }}
                           />
@@ -1203,21 +1251,28 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   </div>
 
                   <p className="text-xs text-slate-600 dark:text-slate-300">
-                    The salesman account has been provisioned in the PostgreSQL database and assigned {createdSalesmanCreds.assignedCount} beat shops.
+                    The salesman account has been provisioned in the PostgreSQL database and
+                    assigned {createdSalesmanCreds.assignedCount} beat shops.
                   </p>
 
                   <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
                     <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700">
                       <span className="text-slate-400">Salesman Name:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{createdSalesmanCreds.name}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {createdSalesmanCreds.name}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700">
                       <span className="text-slate-400">Login Mobile:</span>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">+91 {createdSalesmanCreds.phone}</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        +91 {createdSalesmanCreds.phone}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center py-1">
                       <span className="text-slate-400">Default Password:</span>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{createdSalesmanCreds.password}</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {createdSalesmanCreds.password}
+                      </span>
                     </div>
                   </div>
 
@@ -1331,8 +1386,12 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                                 className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                               />
                               <div className="flex-1 truncate">
-                                <span className="font-semibold text-slate-900 dark:text-white">{r.shopName}</span>
-                                <span className="text-[10px] text-slate-400 ml-1.5">({r.ownerName} &bull; {r.city})</span>
+                                <span className="font-semibold text-slate-900 dark:text-white">
+                                  {r.shopName}
+                                </span>
+                                <span className="text-[10px] text-slate-400 ml-1.5">
+                                  ({r.ownerName} &bull; {r.city})
+                                </span>
                               </div>
                             </label>
                           );
@@ -1388,11 +1447,15 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs text-slate-500">
-                  <span>Selected Shops: {assignedShopIdsForModal.length} of {retailers.length}</span>
+                  <span>
+                    Selected Shops: {assignedShopIdsForModal.length} of {retailers.length}
+                  </span>
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setAssignedShopIdsForModal(retailers.map((r) => r.id as string))}
+                      onClick={() =>
+                        setAssignedShopIdsForModal(retailers.map((r) => r.id as string))
+                      }
                       className="text-emerald-600 hover:underline text-[11px]"
                     >
                       Select All
@@ -1431,7 +1494,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <div className="flex-1 truncate">
-                          <p className="font-semibold text-slate-900 dark:text-white">{r.shopName}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white">
+                            {r.shopName}
+                          </p>
                           <p className="text-[10px] text-slate-400">
                             {r.ownerName} &bull; {r.address}, {r.city}
                           </p>
@@ -1477,7 +1542,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <CheckCircle2 className="w-4 h-4" />
               <span>{actionSuccessMessage}</span>
             </div>
-            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setActionSuccessMessage(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               &times;
             </button>
           </div>
@@ -1490,7 +1558,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <span>Tally ERP 9 / Tally Prime Batch Export Center</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Generate standardized RFC-4180 CSV batch vouchers for direct import into Tally ERP without double data-entry.
+              Generate standardized RFC-4180 CSV batch vouchers for direct import into Tally ERP
+              without double data-entry.
             </p>
           </div>
 
@@ -1517,7 +1586,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs">
             <p className="text-xs font-semibold text-slate-400">Approved Orders Ready</p>
-            <p className="text-2xl font-bold text-emerald-500 mt-1">{metrics.approvedOrders} Orders</p>
+            <p className="text-2xl font-bold text-emerald-500 mt-1">
+              {metrics.approvedOrders} Orders
+            </p>
             <p className="text-[11px] text-slate-400 mt-1">Verified with valid GSTIN & ledger</p>
           </div>
 
@@ -1541,7 +1612,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             Tally Ledger Schema & Field Mapping
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            The exported file is formatted with exact headers required by standard Tally XML/CSV import utilities:
+            The exported file is formatted with exact headers required by standard Tally XML/CSV
+            import utilities:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
@@ -1598,7 +1670,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <CheckCircle2 className="w-4 h-4" />
               <span>{actionSuccessMessage}</span>
             </div>
-            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setActionSuccessMessage(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               &times;
             </button>
           </div>
@@ -1611,7 +1686,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <span>FMCG Product Catalogue & Warehouse Inventory</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Maintain master SKUs, distributor wholesale pricing, MRP margins, GST slabs, and live warehouse inventory.
+              Maintain master SKUs, distributor wholesale pricing, MRP margins, GST slabs, and live
+              warehouse inventory.
             </p>
           </div>
 
@@ -1647,7 +1723,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
               {totalInventoryUnits.toLocaleString('en-IN')} Boxes
             </p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">{inStockCount} SKUs well-stocked</p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+              {inStockCount} SKUs well-stocked
+            </p>
           </div>
 
           <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631] shadow-xs">
@@ -1740,31 +1818,43 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredProducts.map((p) => {
-                  const margin = p.mrp > 0 ? Math.round(((p.mrp - p.basePrice) / p.mrp) * 1000) / 10 : 0;
+                  const margin =
+                    p.mrp > 0 ? Math.round(((p.mrp - p.basePrice) / p.mrp) * 1000) / 10 : 0;
                   const isLow = p.stock > 0 && p.stock <= 50;
                   const isOut = p.stock <= 0;
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors">
+                    <tr
+                      key={p.id}
+                      className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors"
+                    >
                       <td className="py-3 px-3">
                         <p className="font-bold text-slate-900 dark:text-white">{p.name}</p>
                         <p className="font-mono text-[10px] text-slate-400">{p.skuCode}</p>
                       </td>
 
                       <td className="py-3 px-3">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">{p.brand}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {p.brand}
+                        </span>
                         <p className="text-[10px] text-slate-400">{p.category}</p>
                       </td>
 
                       <td className="py-3 px-3">
-                        <span className="font-medium text-slate-800 dark:text-slate-200">{p.unit}</span>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">
+                          {p.unit}
+                        </span>
                         <p className="text-[10px] text-slate-400">{p.packSize}</p>
                       </td>
 
                       <td className="py-3 px-3">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="font-bold text-slate-900 dark:text-white">₹{p.basePrice.toFixed(1)}</span>
-                          <span className="text-[10px] text-slate-400 line-through">₹{p.mrp.toFixed(0)}</span>
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            ₹{p.basePrice.toFixed(1)}
+                          </span>
+                          <span className="text-[10px] text-slate-400 line-through">
+                            ₹{p.mrp.toFixed(0)}
+                          </span>
                         </div>
                         <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                           {margin}% Retailer Margin
@@ -2059,7 +2149,13 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                     className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
                   >
                     <Package className="w-3.5 h-3.5" />
-                    <span>{isSubmittingProduct ? 'Saving...' : editingProduct ? 'Update Product' : 'Add Product'}</span>
+                    <span>
+                      {isSubmittingProduct
+                        ? 'Saving...'
+                        : editingProduct
+                          ? 'Update Product'
+                          : 'Add Product'}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -2085,7 +2181,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               </div>
 
               <div>
-                <p className="font-bold text-slate-900 dark:text-white text-xs">{stockModalProduct.name}</p>
+                <p className="font-bold text-slate-900 dark:text-white text-xs">
+                  {stockModalProduct.name}
+                </p>
                 <p className="font-mono text-[10px] text-slate-400">{stockModalProduct.skuCode}</p>
               </div>
 
@@ -2104,7 +2202,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   <input
                     type="number"
                     value={stockModalQuantity}
-                    onChange={(e) => setStockModalQuantity(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    onChange={(e) =>
+                      setStockModalQuantity(Math.max(0, parseInt(e.target.value, 10) || 0))
+                    }
                     className="flex-1 text-center py-2 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200 dark:border-slate-700 font-bold font-mono text-base text-slate-900 dark:text-white focus:outline-hidden"
                   />
                   <button
@@ -2153,7 +2253,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <CheckCircle2 className="w-4 h-4" />
               <span>{actionSuccessMessage}</span>
             </div>
-            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setActionSuccessMessage(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               &times;
             </button>
           </div>
@@ -2166,7 +2269,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <span>Trade Schemes & Promotional Engine</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Configure wholesale trade promotions (Buy X Get Y Free, percentage discounts, cash deals) to accelerate retailer order volumes.
+              Configure wholesale trade promotions (Buy X Get Y Free, percentage discounts, cash
+              deals) to accelerate retailer order volumes.
             </p>
           </div>
 
@@ -2203,7 +2307,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
               {buyXGetYCount} Deals
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">Free goods automatically added to cart</p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Free goods automatically added to cart
+            </p>
           </div>
 
           <div className="bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs">
@@ -2255,7 +2361,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   const targetProd = s.product || products.find((p) => p.id === s.productId);
 
                   return (
-                    <tr key={s.id} className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors">
+                    <tr
+                      key={s.id}
+                      className="hover:bg-slate-50/70 dark:hover:bg-[#1C2028]/50 transition-colors"
+                    >
                       <td className="py-3 px-3">
                         <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
                         <p className="text-[10px] text-slate-400">ID: {s.id.slice(0, 8)}...</p>
@@ -2266,7 +2375,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           {targetProd ? targetProd.name : 'Target SKU'}
                         </p>
                         {targetProd?.skuCode && (
-                          <p className="font-mono text-[10px] text-slate-400">{targetProd.skuCode}</p>
+                          <p className="font-mono text-[10px] text-slate-400">
+                            {targetProd.skuCode}
+                          </p>
                         )}
                       </td>
 
@@ -2281,8 +2392,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           {s.schemeType === 'BUY_X_GET_Y_FREE'
                             ? '🎁 Buy X Get Y Free'
                             : s.schemeType === 'PERCENTAGE_DISCOUNT'
-                            ? '🏷️ Percentage Off'
-                            : '💰 Flat Cash Off'}
+                              ? '🏷️ Percentage Off'
+                              : '💰 Flat Cash Off'}
                         </span>
                       </td>
 
@@ -2292,14 +2403,18 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                             <span className="font-bold text-slate-900 dark:text-white">
                               Buy {s.minQuantity} Boxes &rarr; Get {s.freeQuantity} FREE
                             </span>
-                            <p className="text-[10px] text-slate-400">Multiples apply on larger cart volumes</p>
+                            <p className="text-[10px] text-slate-400">
+                              Multiples apply on larger cart volumes
+                            </p>
                           </div>
                         ) : s.schemeType === 'PERCENTAGE_DISCOUNT' ? (
                           <div>
                             <span className="font-bold text-slate-900 dark:text-white">
                               {s.discountPercent}% OFF on &ge; {s.minQuantity} Boxes
                             </span>
-                            <p className="text-[10px] text-slate-400">Calculated on wholesale dealer rate</p>
+                            <p className="text-[10px] text-slate-400">
+                              Calculated on wholesale dealer rate
+                            </p>
                           </div>
                         ) : (
                           <div>
@@ -2523,8 +2638,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                     {schemeType === 'BUY_X_GET_Y_FREE'
                       ? `When Kirana orders ${schemeMinQty} boxes, they get ${schemeFreeQty} box completely FREE (20 boxes = ${parseInt(schemeFreeQty, 10) * 2} free boxes).`
                       : schemeType === 'PERCENTAGE_DISCOUNT'
-                      ? `Kirana receives ${schemeDiscountPercent}% instant discount when purchasing ${schemeMinQty} or more boxes.`
-                      : `Kirana saves ₹${schemeDiscountPercent} off every box when purchasing ${schemeMinQty} or more boxes.`}
+                        ? `Kirana receives ${schemeDiscountPercent}% instant discount when purchasing ${schemeMinQty} or more boxes.`
+                        : `Kirana saves ₹${schemeDiscountPercent} off every box when purchasing ${schemeMinQty} or more boxes.`}
                   </p>
                 </div>
 
@@ -2570,7 +2685,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <CheckCircle2 className="w-4 h-4" />
               <span>{actionSuccessMessage}</span>
             </div>
-            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setActionSuccessMessage(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               &times;
             </button>
           </div>
@@ -2600,7 +2718,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               className="p-2 rounded-xl bg-white dark:bg-[#15181E] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition-all cursor-pointer shadow-xs"
               title="Refresh Analytics"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin text-emerald-500' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin text-emerald-500' : ''}`}
+              />
             </button>
             {setCurrentTab && (
               <button
@@ -2619,7 +2739,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           <div className="p-4 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Total GMV Booked</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Total GMV Booked
+              </span>
               <DollarSign className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -2634,7 +2756,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           <div className="p-4 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Today's Sales GMV</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Today's Sales GMV
+              </span>
               <Calendar className="w-4 h-4 text-blue-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -2648,7 +2772,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           <div className="p-4 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Average Order Value (AOV)</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Average Order Value (AOV)
+              </span>
               <TrendingUp className="w-4 h-4 text-purple-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -2662,7 +2788,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           <div className="p-4 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Active Kirana Network</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Active Kirana Network
+              </span>
               <Store className="w-4 h-4 text-amber-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -2681,9 +2809,13 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <PieChart className="w-4 h-4 text-emerald-500" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Brand Revenue Velocity</h3>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Brand Revenue Velocity
+                </h3>
               </div>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">Share of Total Sales</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Share of Total Sales
+              </span>
             </div>
 
             <div className="space-y-3">
@@ -2734,12 +2866,15 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
             {/* Category Badges */}
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5">
-              {(categoryBreakdown.length > 0 ? categoryBreakdown : [
-                { category: 'Biscuits & Cookies', percentage: 41 },
-                { category: 'Noodles & Snacks', percentage: 27 },
-                { category: 'Detergents & Soaps', percentage: 22 },
-                { category: 'Cooking Essentials', percentage: 10 },
-              ]).map((c) => (
+              {(categoryBreakdown.length > 0
+                ? categoryBreakdown
+                : [
+                    { category: 'Biscuits & Cookies', percentage: 41 },
+                    { category: 'Noodles & Snacks', percentage: 27 },
+                    { category: 'Detergents & Soaps', percentage: 22 },
+                    { category: 'Cooking Essentials', percentage: 10 },
+                  ]
+              ).map((c) => (
                 <span
                   key={c.category}
                   className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-[#1C2028] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
@@ -2755,19 +2890,64 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Top Kirana Buyers (Jabalpur)</h3>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Top Kirana Buyers (Jabalpur)
+                </h3>
               </div>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">By Total GMV</span>
             </div>
 
             <div className="space-y-2.5">
-              {(topRetailers.length > 0 ? topRetailers : [
-                { id: '1', shopName: 'Shri Ganesh Kirana Store', ownerName: 'Ramesh Patel', totalOrders: 14, totalSpent: 168400, creditLimit: 75000, outstandingBalance: 14200 },
-                { id: '2', shopName: 'Gupta Daily Needs & Grocery', ownerName: 'Sunil Gupta', totalOrders: 11, totalSpent: 142100, creditLimit: 60000, outstandingBalance: 22000 },
-                { id: '3', shopName: 'Mahakaushal Super Bazaar', ownerName: 'Deepak Tiwari', totalOrders: 9, totalSpent: 118900, creditLimit: 80000, outstandingBalance: 35000 },
-                { id: '4', shopName: 'Narmada Provision Store', ownerName: 'Anil Agrawal', totalOrders: 8, totalSpent: 96500, creditLimit: 50000, outstandingBalance: 12500 },
-                { id: '5', shopName: 'Vijay Kirana & General Store', ownerName: 'Vijay Yadav', totalOrders: 6, totalSpent: 74200, creditLimit: 40000, outstandingBalance: 8400 },
-              ]).map((tr, index) => (
+              {(topRetailers.length > 0
+                ? topRetailers
+                : [
+                    {
+                      id: '1',
+                      shopName: 'Shri Ganesh Kirana Store',
+                      ownerName: 'Ramesh Patel',
+                      totalOrders: 14,
+                      totalSpent: 168400,
+                      creditLimit: 75000,
+                      outstandingBalance: 14200,
+                    },
+                    {
+                      id: '2',
+                      shopName: 'Gupta Daily Needs & Grocery',
+                      ownerName: 'Sunil Gupta',
+                      totalOrders: 11,
+                      totalSpent: 142100,
+                      creditLimit: 60000,
+                      outstandingBalance: 22000,
+                    },
+                    {
+                      id: '3',
+                      shopName: 'Mahakaushal Super Bazaar',
+                      ownerName: 'Deepak Tiwari',
+                      totalOrders: 9,
+                      totalSpent: 118900,
+                      creditLimit: 80000,
+                      outstandingBalance: 35000,
+                    },
+                    {
+                      id: '4',
+                      shopName: 'Narmada Provision Store',
+                      ownerName: 'Anil Agrawal',
+                      totalOrders: 8,
+                      totalSpent: 96500,
+                      creditLimit: 50000,
+                      outstandingBalance: 12500,
+                    },
+                    {
+                      id: '5',
+                      shopName: 'Vijay Kirana & General Store',
+                      ownerName: 'Vijay Yadav',
+                      totalOrders: 6,
+                      totalSpent: 74200,
+                      creditLimit: 40000,
+                      outstandingBalance: 8400,
+                    },
+                  ]
+              ).map((tr, index) => (
                 <div
                   key={tr.id}
                   className="p-3 rounded-xl bg-slate-50/80 dark:bg-[#1C2028] border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 hover:border-emerald-500/30 transition-all"
@@ -2778,16 +2958,18 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                         index === 0
                           ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                           : index === 1
-                          ? 'bg-slate-300/40 text-slate-700 dark:text-slate-300'
-                          : index === 2
-                          ? 'bg-amber-700/20 text-amber-700 dark:text-amber-500'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            ? 'bg-slate-300/40 text-slate-700 dark:text-slate-300'
+                            : index === 2
+                              ? 'bg-amber-700/20 text-amber-700 dark:text-amber-500'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                       }`}
                     >
                       #{index + 1}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{tr.shopName}</p>
+                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                        {tr.shopName}
+                      </p>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400">
                         {tr.ownerName} &bull; {tr.totalOrders} Orders
                       </p>
@@ -2824,7 +3006,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Shops dormant for &ge; {churnDaysFilter} days. Re-engage immediately with 1-click personalized WhatsApp scheme nudges or assign a beat visit.
+                Shops dormant for &ge; {churnDaysFilter} days. Re-engage immediately with 1-click
+                personalized WhatsApp scheme nudges or assign a beat visit.
               </p>
             </div>
 
@@ -2853,7 +3036,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           {churnRadar.length === 0 ? (
             <div className="p-8 text-center bg-emerald-500/5 dark:bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-              <p className="font-bold text-sm text-slate-900 dark:text-white">All Jabalpur Kiranas are Active!</p>
+              <p className="font-bold text-sm text-slate-900 dark:text-white">
+                All Jabalpur Kiranas are Active!
+              </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Zero retail shops have been inactive for over {churnDaysFilter} days.
               </p>
@@ -2873,10 +3058,17 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {churnRadar.map((shop) => (
-                    <tr key={shop.id} className="hover:bg-slate-50/60 dark:hover:bg-[#1C2028]/60 transition-colors">
+                    <tr
+                      key={shop.id}
+                      className="hover:bg-slate-50/60 dark:hover:bg-[#1C2028]/60 transition-colors"
+                    >
                       <td className="py-3 px-3.5">
-                        <div className="font-bold text-slate-900 dark:text-white">{shop.shopName}</div>
-                        <div className="text-[10px] text-slate-500">{shop.ownerName} &bull; {shop.city}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {shop.shopName}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {shop.ownerName} &bull; {shop.city}
+                        </div>
                       </td>
                       <td className="py-3 px-3.5 font-mono text-slate-600 dark:text-slate-300">
                         {shop.phone}
@@ -2897,7 +3089,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                         {shop.lastOrderDate ? (
                           <div>
                             <span className="font-mono font-semibold">
-                              {new Date(shop.lastOrderDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              {new Date(shop.lastOrderDate).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                              })}
                             </span>
                             {shop.lastOrderAmount && (
                               <span className="text-[10px] text-slate-400 block font-mono">
@@ -2936,7 +3131,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                           {/* Quick Beat Re-assignment trigger */}
                           <button
                             onClick={() => {
-                              setActionSuccessMessage(`Priority Beat visit assigned for ${shop.shopName}!`);
+                              setActionSuccessMessage(
+                                `Priority Beat visit assigned for ${shop.shopName}!`
+                              );
                               setTimeout(() => setActionSuccessMessage(null), 3500);
                             }}
                             className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-[11px] transition-all cursor-pointer inline-flex items-center gap-1"
@@ -2974,7 +3171,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <CheckCircle2 className="w-4 h-4" />
               <span>{actionSuccessMessage}</span>
             </div>
-            <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setActionSuccessMessage(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               &times;
             </button>
           </div>
@@ -3003,7 +3203,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             className="p-2 rounded-xl bg-white dark:bg-[#15181E] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition-all cursor-pointer shadow-xs"
             title="Refresh Financials"
           >
-            <RefreshCw className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin text-emerald-500' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin text-emerald-500' : ''}`}
+            />
           </button>
         </div>
 
@@ -3011,7 +3213,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-5 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Total Credit Line Extended</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Total Credit Line Extended
+              </span>
               <Building2 className="w-4 h-4 text-slate-400" />
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -3024,7 +3228,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
           <div className="p-5 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Outstanding Market Receivables</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Outstanding Market Receivables
+              </span>
               <AlertCircle className="w-4 h-4 text-amber-500" />
             </div>
             <div className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
@@ -3037,7 +3243,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
           <div className="p-5 rounded-2xl bg-white dark:bg-[#15181E] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Available Purchasing Headroom</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Available Purchasing Headroom
+              </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
@@ -3054,9 +3262,13 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-purple-500" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Receivables Aging Analysis</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                Receivables Aging Analysis
+              </h3>
             </div>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">Indian FMCG 3-Tier Distribution</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Indian FMCG 3-Tier Distribution
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -3067,7 +3279,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <p className="text-lg font-black text-emerald-700 dark:text-emerald-300 font-mono mt-1">
                 ₹{(aging?.current0to15Days || 215000).toLocaleString('en-IN')}
               </p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Within standard trade settlement window</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Within standard trade settlement window
+              </p>
             </div>
 
             <div className="p-4 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20">
@@ -3077,7 +3291,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <p className="text-lg font-black text-amber-700 dark:text-amber-400 font-mono mt-1">
                 ₹{(aging?.overdue16to30Days || 112000).toLocaleString('en-IN')}
               </p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Requires salesman verbal follow-up</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Requires salesman verbal follow-up
+              </p>
             </div>
 
             <div className="p-4 rounded-xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20">
@@ -3087,7 +3303,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <p className="text-lg font-black text-rose-700 dark:text-rose-400 font-mono mt-1">
                 ₹{(aging?.critical30PlusDays || 57000).toLocaleString('en-IN')}
               </p>
-              <p className="text-[10px] text-slate-500 mt-0.5">Triggers automatic order credit hold</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Triggers automatic order credit hold
+              </p>
             </div>
           </div>
         </div>
@@ -3126,10 +3344,15 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {highRiskRetailers.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/60 dark:hover:bg-[#1C2028]/60 transition-colors">
+                    <tr
+                      key={r.id}
+                      className="hover:bg-slate-50/60 dark:hover:bg-[#1C2028]/60 transition-colors"
+                    >
                       <td className="py-3 px-3.5">
                         <div className="font-bold text-slate-900 dark:text-white">{r.shopName}</div>
-                        <div className="text-[10px] text-slate-500">{r.ownerName} &bull; {r.phone}</div>
+                        <div className="text-[10px] text-slate-500">
+                          {r.ownerName} &bull; {r.phone}
+                        </div>
                       </td>
                       <td className="py-3 px-3.5 font-mono text-slate-700 dark:text-slate-300">
                         ₹{r.creditLimit.toLocaleString('en-IN')}
@@ -3213,15 +3436,18 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               {liveOrderToast.shopName}
             </p>
             <p className="text-slate-300 mt-0.5">
-              Order <strong className="text-white font-mono">{liveOrderToast.orderNumber}</strong> for{' '}
-              <strong className="text-emerald-400 font-bold">₹{liveOrderToast.amount.toFixed(0)}</strong>
+              Order <strong className="text-white font-mono">{liveOrderToast.orderNumber}</strong>{' '}
+              for{' '}
+              <strong className="text-emerald-400 font-bold">
+                ₹{liveOrderToast.amount.toFixed(0)}
+              </strong>
             </p>
             <p className="text-[10px] text-slate-400 mt-1">
               {liveOrderToast.createdVia === 'SALESMAN_APP'
                 ? `📱 Beat Salesman: ${liveOrderToast.salesmanName || 'Field Agent'}`
                 : liveOrderToast.createdVia === 'AI_CAPTURE'
-                ? '🤖 AI WhatsApp'
-                : '💻 Kirana Portal'}
+                  ? '🤖 AI WhatsApp'
+                  : '💻 Kirana Portal'}
             </p>
           </div>
         </div>
@@ -3233,7 +3459,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <CheckCircle2 className="w-4 h-4" />
             <span>{actionSuccessMessage}</span>
           </div>
-          <button onClick={() => setActionSuccessMessage(null)} className="opacity-80 hover:opacity-100">
+          <button
+            onClick={() => setActionSuccessMessage(null)}
+            className="opacity-80 hover:opacity-100"
+          >
             &times;
           </button>
         </div>
@@ -3252,7 +3481,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            {salesmen.length > 0 ? salesmen.length : metrics.activeSalesmenCount} Beat Salesmen in Field
+            {salesmen.length > 0 ? salesmen.length : metrics.activeSalesmenCount} Beat Salesmen in
+            Field
           </p>
         </div>
 
@@ -3301,7 +3531,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               <span>Van Loading List</span>
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">{metrics.approvedOrders} Approved orders ready for vehicle packing</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            {metrics.approvedOrders} Approved orders ready for vehicle packing
+          </p>
         </div>
       </div>
 
@@ -3315,7 +3547,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   <Wallet className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-400">Distributor Collection Ledger</p>
+                  <p className="text-xs font-semibold text-slate-400">
+                    Distributor Collection Ledger
+                  </p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">₹47,74,800</p>
                 </div>
               </div>
@@ -3330,7 +3564,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
               </div>
               <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>Jabalpur FMCG Hub:</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Operational</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  Operational
+                </span>
               </div>
             </div>
 
@@ -3378,9 +3614,15 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                       ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                       : 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-500/20'
                   }`}
-                  title={isRealtimeConnected ? 'Live auto-refresh via Server-Sent Events' : 'Reconnecting to live stream...'}
+                  title={
+                    isRealtimeConnected
+                      ? 'Live auto-refresh via Server-Sent Events'
+                      : 'Reconnecting to live stream...'
+                  }
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${isRealtimeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}
+                  />
                   <span>{isRealtimeConnected ? 'Live Sync' : 'Reconnecting'}</span>
                 </span>
                 <button
@@ -3477,11 +3719,15 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                             isApproved
                               ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300'
                               : isCreditHold
-                              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                                ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                           }`}
                         >
-                          {isApproved ? <Check className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
+                          {isApproved ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Building2 className="w-4 h-4" />
+                          )}
                         </div>
 
                         <div className="min-w-0">
@@ -3503,8 +3749,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                               {order.createdVia === 'AI_CAPTURE'
                                 ? '🤖 AI WhatsApp'
                                 : order.createdVia === 'SALESMAN_APP'
-                                ? '📱 Beat Salesman'
-                                : '💻 Retailer Portal'}
+                                  ? '📱 Beat Salesman'
+                                  : '💻 Retailer Portal'}
                             </span>
                             <span>•</span>
                             <span className="text-[10px] text-slate-400">
@@ -3544,7 +3790,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                         </div>
 
                         {order.status === 'PENDING' && (
-                          <div className="flex gap-1 mt-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="flex gap-1 mt-2 justify-end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               onClick={() => handleApprove(order.id)}
                               className="h-6 w-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition-colors cursor-pointer"
@@ -3563,7 +3812,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                         )}
 
                         {order.status === 'APPROVED' && (
-                          <div className="flex gap-1 mt-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="flex gap-1 mt-2 justify-end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               onClick={() => handleDispatch(order.id)}
                               className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center gap-1 transition-colors cursor-pointer"
@@ -3576,7 +3828,10 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                         )}
 
                         {order.status === 'DISPATCHED' && (
-                          <div className="flex gap-1 mt-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="flex gap-1 mt-2 justify-end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               onClick={() => handleDeliver(order.id)}
                               className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center gap-1 transition-colors cursor-pointer"
@@ -3619,8 +3874,8 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                       selectedOrder.status === 'APPROVED'
                         ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400'
                         : selectedOrder.status === 'REJECTED'
-                        ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
-                        : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+                          ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'
+                          : 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
                     }`}
                   >
                     {selectedOrder.status}
@@ -3629,7 +3884,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
 
                 <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#1C2028] border border-slate-200/60 dark:border-slate-800 text-xs space-y-1.5">
                   <div className="flex justify-between items-center font-bold">
-                    <span className="text-slate-600 dark:text-slate-300">Retailer Khata Status:</span>
+                    <span className="text-slate-600 dark:text-slate-300">
+                      Retailer Khata Status:
+                    </span>
                     <span
                       className={
                         selectedOrder.creditStatus === 'HOLD'
@@ -3654,7 +3911,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   </div>
                   <div className="flex justify-between text-slate-500 dark:text-slate-400">
                     <span>Current Outstanding:</span>
-                    <span>₹{selectedOrder.retailer.outstandingBalance.toLocaleString('en-IN')}</span>
+                    <span>
+                      ₹{selectedOrder.retailer.outstandingBalance.toLocaleString('en-IN')}
+                    </span>
                   </div>
                 </div>
 
@@ -3703,7 +3962,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
                   </div>
                   <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-slate-800">
                     <span>Total Order Amount</span>
-                    <span className="text-emerald-500">₹{selectedOrder.finalAmount.toFixed(2)}</span>
+                    <span className="text-emerald-500">
+                      ₹{selectedOrder.finalAmount.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -3791,7 +4052,9 @@ export const AdminDashboard = ({ currentTab = 'orders', setCurrentTab }: AdminDa
             <div className="bg-white dark:bg-[#16181E] rounded-2xl p-8 border border-slate-200/80 dark:border-[#222631] text-center text-slate-400 flex flex-col items-center justify-center h-full">
               <Package className="w-12 h-12 stroke-1 mb-2 opacity-50" />
               <p className="text-sm font-semibold">Select an order</p>
-              <p className="text-xs mt-1">Click any order in the queue to inspect items & verify credit.</p>
+              <p className="text-xs mt-1">
+                Click any order in the queue to inspect items & verify credit.
+              </p>
             </div>
           )}
         </div>

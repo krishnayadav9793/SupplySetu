@@ -23,7 +23,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = 'supplysetu-cart-items';
 
-function calculateItemBenefits(product: Product, quantity: number) {
+export function calculateItemBenefits(product: Product, quantity: number) {
   const unitPrice = product.pricing?.rate ?? product.basePrice;
   let discountAmount = 0;
   let freeQuantity = 0;
@@ -37,9 +37,10 @@ function calculateItemBenefits(product: Product, quantity: number) {
       freeQuantity = sets * scheme.freeQuantity;
     } else if (scheme.schemeType === 'PERCENTAGE_DISCOUNT') {
       // e.g. 5% off on total if quantity >= minQuantity
-      discountAmount = Math.round(((unitPrice * quantity * scheme.discountPercent) / 100) * 100) / 100;
+      discountAmount =
+        Math.round(((unitPrice * quantity * scheme.discountPercent) / 100) * 100) / 100;
     } else if (scheme.schemeType === 'FLAT_DISCOUNT') {
-      discountAmount = Math.round((scheme.discountPercent * quantity) * 100) / 100;
+      discountAmount = Math.round(scheme.discountPercent * quantity * 100) / 100;
     }
   }
 

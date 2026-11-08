@@ -456,7 +456,7 @@ export const ProductService = {
       };
       const discount = tierDiscountMap[filter.tier] || 0;
       list = list.map((p) => {
-        const rate = Math.round((p.basePrice * (1 - discount / 100)) * 100) / 100;
+        const rate = Math.round(p.basePrice * (1 - discount / 100) * 100) / 100;
         const marginPercent = Math.round(((p.mrp - rate) / p.mrp) * 1000) / 10;
         const gstAmount = Math.round(((rate * p.gstRate) / 100) * 100) / 100;
         return {
@@ -510,7 +510,9 @@ export const ProductService = {
     return FALLBACK_PRODUCTS.find((p) => p.id === id || p.skuCode === id) || null;
   },
 
-  async createProduct(data: CreateProductInput): Promise<{ success: boolean; data?: Product; message?: string }> {
+  async createProduct(
+    data: CreateProductInput
+  ): Promise<{ success: boolean; data?: Product; message?: string }> {
     try {
       const res = await apiFetch<Product>('/products', {
         method: 'POST',
@@ -522,7 +524,10 @@ export const ProductService = {
     }
   },
 
-  async updateProduct(id: string, data: UpdateProductInput): Promise<{ success: boolean; data?: Product; message?: string }> {
+  async updateProduct(
+    id: string,
+    data: UpdateProductInput
+  ): Promise<{ success: boolean; data?: Product; message?: string }> {
     try {
       const res = await apiFetch<Product>(`/products/${id}`, {
         method: 'PUT',
@@ -534,12 +539,19 @@ export const ProductService = {
     }
   },
 
-  async updateStock(id: string, stockQuantity: number, minOrderQty?: number): Promise<{ success: boolean; message?: string }> {
+  async updateStock(
+    id: string,
+    stockQuantity: number,
+    minOrderQty?: number
+  ): Promise<{ success: boolean; message?: string }> {
     try {
-      const res = await apiFetch<{ productId: string; stockQuantity: number }>(`/products/${id}/stock`, {
-        method: 'PATCH',
-        body: JSON.stringify({ stockQuantity, minOrderQty }),
-      });
+      const res = await apiFetch<{ productId: string; stockQuantity: number }>(
+        `/products/${id}/stock`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ stockQuantity, minOrderQty }),
+        }
+      );
       return { success: res.success, message: res.message };
     } catch (err: any) {
       return { success: false, message: err?.message || 'Failed to update stock' };
@@ -598,7 +610,9 @@ export const ProductService = {
     ];
   },
 
-  async createScheme(data: CreateSchemeInput): Promise<{ success: boolean; data?: Scheme; message?: string }> {
+  async createScheme(
+    data: CreateSchemeInput
+  ): Promise<{ success: boolean; data?: Scheme; message?: string }> {
     try {
       const res = await apiFetch<Scheme>('/products/schemes', {
         method: 'POST',
@@ -610,7 +624,10 @@ export const ProductService = {
     }
   },
 
-  async toggleSchemeStatus(id: string, isActive?: boolean): Promise<{ success: boolean; message?: string }> {
+  async toggleSchemeStatus(
+    id: string,
+    isActive?: boolean
+  ): Promise<{ success: boolean; message?: string }> {
     try {
       const res = await apiFetch<Scheme>(`/products/schemes/${id}/status`, {
         method: 'PATCH',

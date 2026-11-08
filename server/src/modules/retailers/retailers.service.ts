@@ -32,9 +32,10 @@ export class RetailersService {
     }
 
     const availableCredit = Math.max(0, retailer.creditLimit - retailer.outstandingBalance);
-    const creditUtilization = retailer.creditLimit > 0
-      ? Math.round((retailer.outstandingBalance / retailer.creditLimit) * 100)
-      : 0;
+    const creditUtilization =
+      retailer.creditLimit > 0
+        ? Math.round((retailer.outstandingBalance / retailer.creditLimit) * 100)
+        : 0;
 
     return {
       ...retailer,
@@ -76,9 +77,10 @@ export class RetailersService {
     }
 
     const availableCredit = Math.max(0, retailer.creditLimit - retailer.outstandingBalance);
-    const creditUtilization = retailer.creditLimit > 0
-      ? Math.round((retailer.outstandingBalance / retailer.creditLimit) * 100)
-      : 0;
+    const creditUtilization =
+      retailer.creditLimit > 0
+        ? Math.round((retailer.outstandingBalance / retailer.creditLimit) * 100)
+        : 0;
 
     return {
       ...retailer,
@@ -145,9 +147,8 @@ export class RetailersService {
 
     const formatted = retailers.map((r) => {
       const availableCredit = Math.max(0, r.creditLimit - r.outstandingBalance);
-      const creditUtilization = r.creditLimit > 0
-        ? Math.round((r.outstandingBalance / r.creditLimit) * 100)
-        : 0;
+      const creditUtilization =
+        r.creditLimit > 0 ? Math.round((r.outstandingBalance / r.creditLimit) * 100) : 0;
 
       return {
         id: r.id,
@@ -242,9 +243,8 @@ export class RetailersService {
     const creditLimit = retailer.creditLimit;
     const outstandingBalance = retailer.outstandingBalance;
     const availableCredit = Math.max(0, creditLimit - outstandingBalance);
-    const creditUtilization = creditLimit > 0
-      ? Math.round((outstandingBalance / creditLimit) * 100)
-      : 0;
+    const creditUtilization =
+      creditLimit > 0 ? Math.round((outstandingBalance / creditLimit) * 100) : 0;
 
     let creditStatus: 'HEALTHY' | 'WARNING' | 'OVERDUE_HOLD' = 'HEALTHY';
     if (outstandingBalance > creditLimit) {
@@ -335,11 +335,12 @@ export class RetailersService {
       },
       summary: {
         totalOrdersCount: retailer.orders.length,
-        totalInvoicedAmount: Math.round(
-          retailer.orders
-            .filter((o) => o.status !== 'REJECTED')
-            .reduce((sum, o) => sum + o.finalAmount, 0) * 100
-        ) / 100,
+        totalInvoicedAmount:
+          Math.round(
+            retailer.orders
+              .filter((o) => o.status !== 'REJECTED')
+              .reduce((sum, o) => sum + o.finalAmount, 0) * 100
+          ) / 100,
         paymentTerms: 'Weekly Settlement / Net 7 Days from Delivery',
         distributorUpiVpa: 'supplysetu.distributor@icici',
         distributorBankName: 'State Bank of India (Lordganj Branch, Jabalpur)',

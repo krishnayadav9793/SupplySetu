@@ -14,12 +14,27 @@ router.get('/brands', ProductsController.getBrands);
 // Schemes routes (must be before /:id)
 router.get('/schemes', optionalAuthenticate, ProductsController.listSchemes);
 router.post('/schemes', authenticate, requireRoles(Role.ADMIN), ProductsController.createScheme);
-router.patch('/schemes/:id/status', authenticate, requireRoles(Role.ADMIN), ProductsController.toggleSchemeStatus);
-router.delete('/schemes/:id', authenticate, requireRoles(Role.ADMIN), ProductsController.deleteScheme);
+router.patch(
+  '/schemes/:id/status',
+  authenticate,
+  requireRoles(Role.ADMIN),
+  ProductsController.toggleSchemeStatus
+);
+router.delete(
+  '/schemes/:id',
+  authenticate,
+  requireRoles(Role.ADMIN),
+  ProductsController.deleteScheme
+);
 
 // Product Admin routes
 router.post('/', authenticate, requireRoles(Role.ADMIN), ProductsController.createProduct);
-router.patch('/:id/stock', authenticate, requireRoles(Role.ADMIN, Role.SALESMAN), ProductsController.updateStock);
+router.patch(
+  '/:id/stock',
+  authenticate,
+  requireRoles(Role.ADMIN, Role.SALESMAN),
+  ProductsController.updateStock
+);
 router.put('/:id', authenticate, requireRoles(Role.ADMIN), ProductsController.updateProduct);
 router.delete('/:id', authenticate, requireRoles(Role.ADMIN), ProductsController.deleteProduct);
 

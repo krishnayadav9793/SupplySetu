@@ -22,11 +22,7 @@ import {
   Image as ImageIcon,
   Check,
 } from 'lucide-react';
-import {
-  ValidatedAiOrderCaptureResult,
-  ValidatedAiOrderItem,
-  AiStatusResponse,
-} from '../../types';
+import { ValidatedAiOrderCaptureResult, ValidatedAiOrderItem, AiStatusResponse } from '../../types';
 import {
   AiOrderService,
   SAMPLE_PROMPTS,
@@ -106,7 +102,9 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Speech Recognition is not supported in this browser. You can use text input or simulation.');
+      alert(
+        'Speech Recognition is not supported in this browser. You can use text input or simulation.'
+      );
       return;
     }
 
@@ -156,7 +154,9 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
     setIsRecording(true);
     setVoiceTranscript('');
     setTimeout(() => {
-      setVoiceTranscript('Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah');
+      setVoiceTranscript(
+        'Bhaiya 10 peti Parle G, 5 case Maggi noodle, 2 peti Tata namak jaldi bhej dena kal subah'
+      );
       setIsRecording(false);
     }, 1800);
   };
@@ -354,7 +354,8 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                   )}
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Transcribe WhatsApp orders, handwritten paper slips (Parchi), or voice notes directly into verified stock carts
+                  Transcribe WhatsApp orders, handwritten paper slips (Parchi), or voice notes
+                  directly into verified stock carts
                 </p>
               </div>
             </div>
@@ -431,7 +432,9 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Paste WhatsApp Order or SMS Message
                   </label>
-                  <span className="text-[11px] text-slate-400">Supports Hindi, Hinglish, & English</span>
+                  <span className="text-[11px] text-slate-400">
+                    Supports Hindi, Hinglish, & English
+                  </span>
                 </div>
 
                 <div className="relative">
@@ -620,13 +623,19 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                           : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/30'
                       }`}
                     >
-                      {isRecording ? <MicOff className="w-8 h-8 animate-pulse" /> : <Mic className="w-8 h-8" />}
+                      {isRecording ? (
+                        <MicOff className="w-8 h-8 animate-pulse" />
+                      ) : (
+                        <Mic className="w-8 h-8" />
+                      )}
                     </button>
                   </div>
 
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {isRecording ? 'Listening... Speak Kirana items now' : 'Click microphone to start recording'}
+                      {isRecording
+                        ? 'Listening... Speak Kirana items now'
+                        : 'Click microphone to start recording'}
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {isRecording
@@ -638,7 +647,8 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                   {/* Fallback Simulation Option */}
                   {!isSpeechSupported && (
                     <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/40 text-xs text-amber-700 dark:text-amber-300">
-                      Speech recognition not supported in this browser. Use the simulation button below.
+                      Speech recognition not supported in this browser. Use the simulation button
+                      below.
                     </div>
                   )}
 
@@ -704,8 +714,8 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                     {activeTab === 'parchi'
                       ? 'Scan Parchi with Gemini Vision & Match Catalogue'
                       : activeTab === 'voice'
-                      ? 'Process Spoken Voice Order'
-                      : 'Interpret & Generate Verified Cart'}
+                        ? 'Process Spoken Voice Order'
+                        : 'Interpret & Generate Verified Cart'}
                   </span>
                 </>
               )}
@@ -723,7 +733,8 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                       </span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Human confirmation: Review stock availability, adjust quantities, and swap alternatives.
+                      Human confirmation: Review stock availability, adjust quantities, and swap
+                      alternatives.
                     </p>
                   </div>
 
@@ -747,8 +758,8 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                           !item.isAvailable
                             ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
                             : item.stockWarning
-                            ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'
-                            : 'bg-white dark:bg-[#161a23] border-slate-200 dark:border-[#222736]'
+                              ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'
+                              : 'bg-white dark:bg-[#161a23] border-slate-200 dark:border-[#222736]'
                         }`}
                       >
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -760,8 +771,8 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                                   isHigh
                                     ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                                     : isMedium
-                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-500/20'
                                 }`}
                               >
                                 {Math.round(item.confidence * 100)}% Match
@@ -785,7 +796,9 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                                 {item.packSize}
                               </span>
                               <span>•</span>
-                              <span>₹{item.unitPrice.toFixed(2)} / {item.unit}</span>
+                              <span>
+                                ₹{item.unitPrice.toFixed(2)} / {item.unit}
+                              </span>
                             </div>
 
                             {/* Stock Warning or Success Badge */}
@@ -840,7 +853,9 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                               <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 bg-slate-50 dark:bg-slate-900">
                                 <button
                                   type="button"
-                                  onClick={() => handleQuantityChange(index, item.requestedQuantity - 1)}
+                                  onClick={() =>
+                                    handleQuantityChange(index, item.requestedQuantity - 1)
+                                  }
                                   className="w-7 h-7 rounded flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer"
                                 >
                                   <Minus className="w-3 h-3" />
@@ -850,7 +865,9 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => handleQuantityChange(index, item.requestedQuantity + 1)}
+                                  onClick={() =>
+                                    handleQuantityChange(index, item.requestedQuantity + 1)
+                                  }
                                   className="w-7 h-7 rounded flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer"
                                 >
                                   <Plus className="w-3 h-3" />
@@ -896,14 +913,18 @@ export const AiOrderPadModal: React.FC<AiOrderPadModalProps> = ({ isOpen, onClos
             <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-[#222736] bg-slate-50 dark:bg-[#151922] flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-300">
                 <div>
-                  <span className="text-slate-400 uppercase tracking-wider block text-[10px]">Total Order</span>
+                  <span className="text-slate-400 uppercase tracking-wider block text-[10px]">
+                    Total Order
+                  </span>
                   <span className="text-base font-bold text-slate-900 dark:text-white">
                     {totalCalculatedUnits} Boxes / Cases
                   </span>
                 </div>
                 <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
                 <div>
-                  <span className="text-slate-400 uppercase tracking-wider block text-[10px]">Estimated Total</span>
+                  <span className="text-slate-400 uppercase tracking-wider block text-[10px]">
+                    Estimated Total
+                  </span>
                   <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
                     ₹{totalCalculatedAmount.toFixed(2)}
                   </span>

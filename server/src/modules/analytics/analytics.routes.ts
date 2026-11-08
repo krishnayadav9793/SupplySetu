@@ -14,6 +14,10 @@ router.get('/churn-radar', optionalAuthenticate, AnalyticsController.getChurnRad
 router.get('/financial-risk', optionalAuthenticate, AnalyticsController.getFinancialRisk);
 
 // Salesman Beat & Field Quota Performance
-router.get('/salesman-performance', optionalAuthenticate, AnalyticsController.getSalesmanPerformance);
+router.get(
+  '/salesman-performance',
+  optionalAuthenticate,
+  AnalyticsController.getSalesmanPerformance
+);
 
 export default router;

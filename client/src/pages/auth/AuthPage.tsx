@@ -186,7 +186,6 @@ export const AuthPage: React.FC = () => {
       {/* Main Authentication Card Container */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-lg bg-white dark:bg-[#16181E] rounded-3xl border border-slate-200/80 dark:border-[#222631] shadow-xl overflow-hidden">
-          
           {/* Header Banner */}
           <div className="p-6 sm:p-8 pb-4 text-center">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20 mb-3">
@@ -512,7 +511,8 @@ export const AuthPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-4 px-6 text-center text-xs text-slate-400 border-t border-slate-200/60 dark:border-[#1E222A]">
-        SupplySetu &bull; Jabalpur Wholesale FMCG Distribution &bull; Powered by React, Node.js & PostgreSQL
+        SupplySetu &bull; Jabalpur Wholesale FMCG Distribution &bull; Powered by React, Node.js &
+        PostgreSQL
       </footer>
     </div>
   );

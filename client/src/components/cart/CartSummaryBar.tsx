@@ -3,13 +3,8 @@ import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 export const CartSummaryBar: React.FC = () => {
-  const {
-    totalItemsCount,
-    totalUniqueItems,
-    grandTotal,
-    totalFreeUnits,
-    setIsCartDrawerOpen,
-  } = useCart();
+  const { totalItemsCount, totalUniqueItems, grandTotal, totalFreeUnits, setIsCartDrawerOpen } =
+    useCart();
 
   if (totalItemsCount === 0) return null;
 
@@ -35,14 +30,11 @@ export const CartSummaryBar: React.FC = () => {
               </span>
               {totalFreeUnits > 0 && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[11px] font-semibold text-amber-300 border border-amber-400/30">
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  +{totalFreeUnits} Free!
+                  <Sparkles className="w-3 h-3 text-amber-400" />+{totalFreeUnits} Free!
                 </span>
               )}
             </div>
-            <div className="text-xs text-slate-400">
-              Tax invoice preview ready
-            </div>
+            <div className="text-xs text-slate-400">Tax invoice preview ready</div>
           </div>
         </div>
 

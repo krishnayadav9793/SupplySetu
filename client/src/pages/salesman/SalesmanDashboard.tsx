@@ -45,7 +45,10 @@ interface SalesmanDashboardProps {
   setCurrentTab?: (tab: string) => void;
 }
 
-export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: SalesmanDashboardProps) => {
+export const SalesmanDashboard = ({
+  currentTab = 'beat',
+  setCurrentTab,
+}: SalesmanDashboardProps) => {
   const { user } = useAuth();
   const [isOnline, setIsOnline] = useState<boolean>(SyncService.isOnline());
   const [isSimulatedOffline, setIsSimulatedOffline] = useState(false);
@@ -82,7 +85,10 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
       address: r.address ? `${r.address}, ${r.city}` : `${r.city || 'Jabalpur'}`,
       status: idx === 0 ? 'visited' : 'pending',
       outstanding: r.outstandingBalance || 0,
-      lastOrder: r.outstandingBalance > 0 ? `₹${r.outstandingBalance.toLocaleString('en-IN')} (Khata)` : 'Cleared',
+      lastOrder:
+        r.outstandingBalance > 0
+          ? `₹${r.outstandingBalance.toLocaleString('en-IN')} (Khata)`
+          : 'Cleared',
     }));
   };
 
@@ -286,7 +292,8 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
   };
 
   const visitedCount = beatShops.filter((s) => s.status === 'visited').length;
-  const progressPercent = beatShops.length > 0 ? Math.round((visitedCount / beatShops.length) * 100) : 0;
+  const progressPercent =
+    beatShops.length > 0 ? Math.round((visitedCount / beatShops.length) * 100) : 0;
   const totalOutstanding = beatShops.reduce((sum, s) => sum + s.outstanding, 0);
 
   const filteredShops = beatShops.filter(
@@ -344,7 +351,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Today's Target</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Today's Target
+              </span>
               <Target className="w-4 h-4 text-slate-400" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -355,7 +364,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
 
           <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Achieved Today</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Achieved Today
+              </span>
               <DollarSign className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
@@ -368,7 +379,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
 
           <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Beat Strike Rate</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Beat Strike Rate
+              </span>
               <TrendingUp className="w-4 h-4 text-blue-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
@@ -381,7 +394,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
 
           <div className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Est. Spot Commission</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">
+                Est. Spot Commission
+              </span>
               <Award className="w-4 h-4 text-amber-500" />
             </div>
             <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
@@ -398,7 +413,8 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className="text-slate-800 dark:text-slate-200">Daily Quota Realization:</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-              ₹{gmvToday.toLocaleString('en-IN')} of ₹{dailyTarget.toLocaleString('en-IN')} ({targetAchieved}%)
+              ₹{gmvToday.toLocaleString('en-IN')} of ₹{dailyTarget.toLocaleString('en-IN')} (
+              {targetAchieved}%)
             </span>
           </div>
           <div className="h-3 w-full bg-slate-100 dark:bg-[#222631] rounded-full overflow-hidden">
@@ -417,8 +433,12 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
         {/* Today's Route Kiranas Checklist */}
         <div className="p-5 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Today's Beat Route Checklist</h3>
-            <span className="text-xs text-slate-400">{visitedCount} Visited, {beatShops.length - visitedCount} Pending</span>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+              Today's Beat Route Checklist
+            </h3>
+            <span className="text-xs text-slate-400">
+              {visitedCount} Visited, {beatShops.length - visitedCount} Pending
+            </span>
           </div>
 
           <div className="space-y-2">
@@ -439,11 +459,17 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
                         : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
                     }`}
                   >
-                    {shop.status === 'visited' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                    {shop.status === 'visited' ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <Clock className="w-4 h-4" />
+                    )}
                   </div>
                   <div>
                     <p className="font-bold text-xs text-slate-900 dark:text-white">{shop.name}</p>
-                    <p className="text-[10px] text-slate-400">{shop.owner} &bull; {shop.address}</p>
+                    <p className="text-[10px] text-slate-400">
+                      {shop.owner} &bull; {shop.address}
+                    </p>
                   </div>
                 </div>
 
@@ -487,7 +513,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
           <div>
             <div className="flex items-center gap-2">
               <Percent className="w-5 h-5 text-emerald-500" />
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Active FMCG Trade Schemes</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                Active FMCG Trade Schemes
+              </h1>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Current promotional deals to pitch during kirana visits
@@ -496,11 +524,35 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(schemes.length > 0 ? schemes : [
-            { id: '1', name: 'Parle-G 10+1 Bumper Deal', schemeType: 'BUY_X_GET_Y_FREE', minQuantity: 10, freeQuantity: 1, discountPercent: 0 },
-            { id: '2', name: 'Surf Excel 5% Bulk Discount', schemeType: 'PERCENTAGE_DISCOUNT', minQuantity: 5, freeQuantity: 0, discountPercent: 5 },
-            { id: '3', name: 'Good Day Butter 12+1 Free', schemeType: 'BUY_X_GET_Y_FREE', minQuantity: 12, freeQuantity: 1, discountPercent: 0 },
-          ]).map((s) => (
+          {(schemes.length > 0
+            ? schemes
+            : [
+                {
+                  id: '1',
+                  name: 'Parle-G 10+1 Bumper Deal',
+                  schemeType: 'BUY_X_GET_Y_FREE',
+                  minQuantity: 10,
+                  freeQuantity: 1,
+                  discountPercent: 0,
+                },
+                {
+                  id: '2',
+                  name: 'Surf Excel 5% Bulk Discount',
+                  schemeType: 'PERCENTAGE_DISCOUNT',
+                  minQuantity: 5,
+                  freeQuantity: 0,
+                  discountPercent: 5,
+                },
+                {
+                  id: '3',
+                  name: 'Good Day Butter 12+1 Free',
+                  schemeType: 'BUY_X_GET_Y_FREE',
+                  minQuantity: 12,
+                  freeQuantity: 1,
+                  discountPercent: 0,
+                },
+              ]
+          ).map((s) => (
             <div
               key={s.id}
               className="p-5 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs space-y-3 relative overflow-hidden"
@@ -540,7 +592,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
           <div>
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-emerald-500" />
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">FMCG Product Catalogue</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                FMCG Product Catalogue
+              </h1>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Live dealer rates and warehouse inventory for Beat #4
@@ -566,8 +620,12 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
               className="p-4 rounded-2xl bg-white dark:bg-[#16181E] border border-slate-200/80 dark:border-[#222631] shadow-xs flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{p.brand}</span>
-                <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">{p.name}</h4>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  {p.brand}
+                </span>
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                  {p.name}
+                </h4>
                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                   Pack: {p.packSize} &bull; MRP: ₹{p.mrp}
                 </p>
@@ -600,7 +658,10 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
             <CheckCircle className="h-4 w-4 flex-shrink-0" />
             <span>{syncStatusMsg}</span>
           </div>
-          <button onClick={() => setSyncStatusMsg(null)} className="text-emerald-600 dark:text-emerald-400">
+          <button
+            onClick={() => setSyncStatusMsg(null)}
+            className="text-emerald-600 dark:text-emerald-400"
+          >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -615,10 +676,12 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
             </div>
             <div>
               <h4 className="text-sm font-bold">
-                {pendingCount} Offline Order{pendingCount > 1 ? 's' : ''} Stored Locally in Dexie IndexedDB
+                {pendingCount} Offline Order{pendingCount > 1 ? 's' : ''} Stored Locally in Dexie
+                IndexedDB
               </h4>
               <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
-                Orders are safely queued with idempotent keys. Ready to synchronize with Jabalpur Distributor Hub.
+                Orders are safely queued with idempotent keys. Ready to synchronize with Jabalpur
+                Distributor Hub.
               </p>
             </div>
           </div>
@@ -739,9 +802,7 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
 
         <div className="bg-white dark:bg-[#16181E] rounded-2xl p-4 border border-slate-200/80 dark:border-[#222631]">
           <p className="text-xs font-semibold text-slate-400">Beat Orders Booked</p>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-            ₹34,450
-          </p>
+          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">₹34,450</p>
           <p className="text-[11px] text-slate-400 mt-1">Daily Beat Target: ₹65,000</p>
         </div>
 
@@ -750,7 +811,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
           <p className="text-2xl font-bold text-amber-500 mt-1">
             ₹{totalOutstanding.toLocaleString('en-IN')}
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">Across {beatShops.length} mapped kirana accounts</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Across {beatShops.length} mapped kirana accounts
+          </p>
         </div>
       </div>
 
@@ -791,69 +854,69 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
         ) : (
           <div className="space-y-3">
             {filteredShops.map((shop) => {
-            const isVisited = shop.status === 'visited';
-            return (
-              <div
-                key={shop.id}
-                className={`rounded-2xl p-4 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                  isVisited
-                    ? 'bg-white dark:bg-[#16181E] border-emerald-500/30'
-                    : 'bg-white dark:bg-[#16181E] border-slate-200/80 dark:border-[#222631]'
-                }`}
-              >
-                <div className="flex items-start sm:items-center gap-3.5">
-                  <div
-                    className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      isVisited
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-sm'
-                        : 'bg-slate-100 dark:bg-[#202530] text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    <Store className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                        {shop.name}
-                      </h3>
-                      {isVisited ? (
-                        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" /> Visited
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> Due Next
-                        </span>
-                      )}
+              const isVisited = shop.status === 'visited';
+              return (
+                <div
+                  key={shop.id}
+                  className={`rounded-2xl p-4 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    isVisited
+                      ? 'bg-white dark:bg-[#16181E] border-emerald-500/30'
+                      : 'bg-white dark:bg-[#16181E] border-slate-200/80 dark:border-[#222631]'
+                  }`}
+                >
+                  <div className="flex items-start sm:items-center gap-3.5">
+                    <div
+                      className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        isVisited
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-[#202530] text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      <Store className="h-5 w-5" />
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {shop.owner} &bull; {shop.address}
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {shop.name}
+                        </h3>
+                        {isVisited ? (
+                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" /> Visited
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Due Next
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {shop.owner} &bull; {shop.address}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-5 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-[#222631]">
+                    <div className="text-left sm:text-right">
+                      <p className="text-[11px] text-slate-400">Outstanding Khata</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        ₹{shop.outstanding.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => handleOpenPunchModal(shop)}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <span>Take Order</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-5 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-[#222631]">
-                  <div className="text-left sm:text-right">
-                    <p className="text-[11px] text-slate-400">Outstanding Khata</p>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">
-                      ₹{shop.outstanding.toLocaleString('en-IN')}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleOpenPunchModal(shop)}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <span>Take Order</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* MODAL: Offline Order Punch Pad */}
       {showPunchModal && selectedShop && (
@@ -879,7 +942,8 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Owner: {selectedShop.owner} &bull; Outstanding Khata: ₹{selectedShop.outstanding.toLocaleString('en-IN')}
+                    Owner: {selectedShop.owner} &bull; Outstanding Khata: ₹
+                    {selectedShop.outstanding.toLocaleString('en-IN')}
                   </p>
                 </div>
               </div>
@@ -917,11 +981,15 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
                         className="p-3 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-slate-50/50 dark:bg-[#181B22] flex items-center justify-between gap-3"
                       >
                         <div className="flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white">{p.name}</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white">
+                            {p.name}
+                          </p>
                           <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
                             <span>SKU: {p.skuCode}</span>
                             <span>&bull;</span>
-                            <span>Rate: ₹{price.toFixed(2)}/{p.unit}</span>
+                            <span>
+                              Rate: ₹{price.toFixed(2)}/{p.unit}
+                            </span>
                             <span>&bull;</span>
                             <span>GST: {p.gstRate}%</span>
                           </div>
@@ -1041,9 +1109,7 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
                   className="mt-4 w-full py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-95 shadow-md flex items-center justify-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  <span>
-                    {isOnline ? 'Punch & Send to Hub' : 'Save to Offline IndexedDB'}
-                  </span>
+                  <span>{isOnline ? 'Punch & Send to Hub' : 'Save to Offline IndexedDB'}</span>
                 </button>
               </div>
             </div>
@@ -1091,8 +1157,18 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
                     </div>
 
                     <div className="text-[11px] text-slate-400 flex flex-wrap gap-x-3 gap-y-1">
-                      <span>Idempotency Key: <code className="text-slate-600 dark:text-slate-300">{ord.clientOrderId}</code></span>
-                      <span>Total: <strong className="text-emerald-600 dark:text-emerald-400">₹{ord.finalAmount.toFixed(2)}</strong></span>
+                      <span>
+                        Idempotency Key:{' '}
+                        <code className="text-slate-600 dark:text-slate-300">
+                          {ord.clientOrderId}
+                        </code>
+                      </span>
+                      <span>
+                        Total:{' '}
+                        <strong className="text-emerald-600 dark:text-emerald-400">
+                          ₹{ord.finalAmount.toFixed(2)}
+                        </strong>
+                      </span>
                       <span>Items: {ord.items.length}</span>
                       <span>Created: {new Date(ord.createdAt).toLocaleTimeString()}</span>
                     </div>
@@ -1100,7 +1176,9 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
                     <div className="bg-white dark:bg-[#1C2028] p-2 rounded-lg border border-slate-200/50 dark:border-[#262B35] text-[11px] text-slate-500">
                       {ord.items.map((it) => (
                         <div key={it.productId} className="flex justify-between">
-                          <span>{it.quantity}x {it.productName}</span>
+                          <span>
+                            {it.quantity}x {it.productName}
+                          </span>
                           <span>₹{it.totalPrice.toFixed(2)}</span>
                         </div>
                       ))}
@@ -1111,9 +1189,7 @@ export const SalesmanDashboard = ({ currentTab = 'beat', setCurrentTab }: Salesm
             </div>
 
             <div className="p-4 border-t border-slate-200/80 dark:border-[#222631] bg-slate-50 dark:bg-[#1A1D24] flex items-center justify-between">
-              <span className="text-xs text-slate-400">
-                Backed by browser IndexedDB (Dexie)
-              </span>
+              <span className="text-xs text-slate-400">Backed by browser IndexedDB (Dexie)</span>
               <button
                 onClick={handleSyncNow}
                 disabled={isSyncing || !isOnline || pendingOrders.length === 0}

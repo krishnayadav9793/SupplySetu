@@ -90,7 +90,11 @@ function numberToIndianWords(num: number): string {
   return `Rupees ${words.trim()} Only`;
 }
 
-export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, isOpen, onClose }) => {
+export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({
+  order,
+  isOpen,
+  onClose,
+}) => {
   if (!isOpen || !order) return null;
 
   const handlePrint = () => {
@@ -147,10 +151,10 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                   order.status === 'DELIVERED'
                     ? 'bg-emerald-100 text-emerald-800'
                     : order.status === 'DISPATCHED'
-                    ? 'bg-blue-100 text-blue-800'
-                    : order.status === 'APPROVED'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-amber-100 text-amber-800'
+                      ? 'bg-blue-100 text-blue-800'
+                      : order.status === 'APPROVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-100 text-amber-800'
                 }`}
               >
                 {order.status}
@@ -177,7 +181,10 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
           </div>
 
           {/* Printable Invoice Container */}
-          <div id="tax-invoice-printable" className="p-6 sm:p-8 space-y-6 text-xs text-slate-800 bg-white">
+          <div
+            id="tax-invoice-printable"
+            className="p-6 sm:p-8 space-y-6 text-xs text-slate-800 bg-white"
+          >
             {/* Top Distributor Letterhead */}
             <div className="border-b-2 border-slate-800 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
@@ -196,10 +203,18 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
               </div>
 
               <div className="text-left sm:text-right text-[11px] space-y-0.5 font-mono">
-                <div><strong>GSTIN:</strong> 23AABCS1429B1Z8</div>
-                <div><strong>PAN:</strong> AABCS1429B</div>
-                <div><strong>FSSAI Lic:</strong> 11421850000312</div>
-                <div><strong>State:</strong> Madhya Pradesh (Code 23)</div>
+                <div>
+                  <strong>GSTIN:</strong> 23AABCS1429B1Z8
+                </div>
+                <div>
+                  <strong>PAN:</strong> AABCS1429B
+                </div>
+                <div>
+                  <strong>FSSAI Lic:</strong> 11421850000312
+                </div>
+                <div>
+                  <strong>State:</strong> Madhya Pradesh (Code 23)
+                </div>
               </div>
             </div>
 
@@ -217,11 +232,14 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                   Billed To / Delivered To:
                 </span>
                 <h3 className="text-sm font-bold text-slate-900">{order.retailer.shopName}</h3>
-                <p className="text-slate-600">Proprietor: <strong>{order.retailer.ownerName}</strong></p>
+                <p className="text-slate-600">
+                  Proprietor: <strong>{order.retailer.ownerName}</strong>
+                </p>
                 <p className="text-slate-600">{order.retailer.city}</p>
                 <p className="text-slate-600">Contact: {order.retailer.phone}</p>
                 <p className="text-slate-700 font-mono text-[11px] pt-1">
-                  <strong>Buyer GSTIN/UIN:</strong> {order.retailer.ownerName ? '23AABCP1234D1Z5' : 'Unregistered Kirana'}
+                  <strong>Buyer GSTIN/UIN:</strong>{' '}
+                  {order.retailer.ownerName ? '23AABCP1234D1Z5' : 'Unregistered Kirana'}
                 </p>
               </div>
 
@@ -254,14 +272,15 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                     {order.createdVia === 'AI_CAPTURE'
                       ? 'AI WhatsApp Bot'
                       : order.createdVia === 'SALESMAN_APP'
-                      ? 'Beat Salesman'
-                      : 'Direct Portal'}
+                        ? 'Beat Salesman'
+                        : 'Direct Portal'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Assigned Beat Salesman:</span>
                   <span className="text-slate-800">
-                    {order.salesman?.name || 'Vikram Sharma'} ({order.salesman?.phone || '9893000002'})
+                    {order.salesman?.name || 'Vikram Sharma'} (
+                    {order.salesman?.phone || '9893000002'})
                   </span>
                 </div>
               </div>
@@ -292,7 +311,9 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                       <tr key={item.id} className="hover:bg-slate-50/50">
                         <td className="py-2.5 px-3 text-slate-400 font-mono">{index + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-slate-900">{item.product?.name || 'FMCG Product'}</div>
+                          <div className="font-bold text-slate-900">
+                            {item.product?.name || 'FMCG Product'}
+                          </div>
                           <div className="text-[10px] text-slate-400 font-mono">
                             SKU: {item.product?.skuCode} &bull; Pack: {item.product?.packSize}
                           </div>
@@ -349,10 +370,18 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                     Bank Account Details for Settlement:
                   </span>
                   <div className="grid grid-cols-2 gap-1 text-slate-700">
-                    <div><strong>Bank:</strong> State Bank of India</div>
-                    <div><strong>Branch:</strong> Lordganj, Jabalpur</div>
-                    <div><strong>A/C No:</strong> 30492817492</div>
-                    <div><strong>IFSC:</strong> SBIN0001242</div>
+                    <div>
+                      <strong>Bank:</strong> State Bank of India
+                    </div>
+                    <div>
+                      <strong>Branch:</strong> Lordganj, Jabalpur
+                    </div>
+                    <div>
+                      <strong>A/C No:</strong> 30492817492
+                    </div>
+                    <div>
+                      <strong>IFSC:</strong> SBIN0001242
+                    </div>
                     <div className="col-span-2 text-emerald-700 font-semibold pt-0.5">
                       <strong>UPI VPA:</strong> supplysetu.distributor@icici
                     </div>
@@ -361,7 +390,8 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
 
                 {/* Terms */}
                 <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                  Terms & Conditions: Subject to Jabalpur jurisdiction. Goods once sold will not be returned without authorized delivery verification note. Payment due within 7 days.
+                  Terms & Conditions: Subject to Jabalpur jurisdiction. Goods once sold will not be
+                  returned without authorized delivery verification note. Payment due within 7 days.
                 </p>
               </div>
 
@@ -389,7 +419,9 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                 )}
                 <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
                   <span>Taxable Subtotal:</span>
-                  <span className="font-mono text-slate-800 font-medium">₹{taxableSubtotal.toFixed(2)}</span>
+                  <span className="font-mono text-slate-800 font-medium">
+                    ₹{taxableSubtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100 text-slate-600">
                   <span>Central GST (CGST):</span>
@@ -411,7 +443,9 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
             <div className="pt-8 flex items-center justify-between border-t border-slate-200 text-xs text-slate-600">
               <div className="text-center">
                 <div className="h-10" />
-                <p className="border-t border-slate-300 pt-1 font-semibold">Receiver&apos;s Signature & Stamp</p>
+                <p className="border-t border-slate-300 pt-1 font-semibold">
+                  Receiver&apos;s Signature & Stamp
+                </p>
                 <p className="text-[10px] text-slate-400">({order.retailer.shopName})</p>
               </div>
 
@@ -419,7 +453,9 @@ export const B2bTaxInvoiceModal: React.FC<B2bTaxInvoiceModalProps> = ({ order, i
                 <div className="h-10 flex items-center justify-center font-serif italic text-emerald-800 font-bold">
                   SupplySetu Authorized
                 </div>
-                <p className="border-t border-slate-300 pt-1 font-semibold">For SupplySetu FMCG Distributors</p>
+                <p className="border-t border-slate-300 pt-1 font-semibold">
+                  For SupplySetu FMCG Distributors
+                </p>
                 <p className="text-[10px] text-slate-400">Authorized Signatory</p>
               </div>
             </div>

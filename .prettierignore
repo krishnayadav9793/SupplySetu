@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.output/
+*.tsbuildinfo
+coverage/
+.vite/
+*.zip
+*.pdf
+*.html
+*.md
+package-lock.json

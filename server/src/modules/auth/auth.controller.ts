@@ -5,7 +5,8 @@ import { AuthenticatedRequest } from '../../middleware/auth';
 export class AuthController {
   static async register(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const { phone, password, name, role, shopName, address, city, state, pincode, gstNumber } = req.body;
+      const { phone, password, name, role, shopName, address, city, state, pincode, gstNumber } =
+        req.body;
       if (!phone || !name) {
         res.status(400).json({ success: false, message: 'Phone number and name are required' });
         return;

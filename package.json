@@ -1,0 +1,23 @@
+{
+  "name": "supplysetu",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "SupplySetu B2B Distribution Platform",
+  "scripts": {
+    "lint": "npm run lint --prefix client && npm run lint --prefix server",
+    "lint:fix": "npm run lint:fix --prefix client && npm run lint:fix --prefix server",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --prefix server && npm run test --prefix client",
+    "typecheck": "npm run build --prefix client && npm run build --prefix server",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2"
+  }
+}

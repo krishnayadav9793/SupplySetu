@@ -77,52 +77,47 @@ export class AnalyticsService {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [
-      totalOrders,
-      todayOrdersCount,
-      allOrders,
-      retailersCount,
-      orderItemsWithProduct,
-    ] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({
-        where: { createdAt: { gte: todayStart } },
-      }),
-      prisma.order.findMany({
-        select: {
-          id: true,
-          status: true,
-          finalAmount: true,
-          totalAmount: true,
-          createdAt: true,
-          retailerId: true,
-          retailer: {
-            select: {
-              id: true,
-              shopName: true,
-              ownerName: true,
-              phone: true,
-              city: true,
-              creditLimit: true,
-              outstandingBalance: true,
+    const [totalOrders, todayOrdersCount, allOrders, retailersCount, orderItemsWithProduct] =
+      await Promise.all([
+        prisma.order.count(),
+        prisma.order.count({
+          where: { createdAt: { gte: todayStart } },
+        }),
+        prisma.order.findMany({
+          select: {
+            id: true,
+            status: true,
+            finalAmount: true,
+            totalAmount: true,
+            createdAt: true,
+            retailerId: true,
+            retailer: {
+              select: {
+                id: true,
+                shopName: true,
+                ownerName: true,
+                phone: true,
+                city: true,
+                creditLimit: true,
+                outstandingBalance: true,
+              },
             },
           },
-        },
-      }),
-      prisma.retailer.count({ where: { isActive: true } }),
-      prisma.orderItem.findMany({
-        select: {
-          quantity: true,
-          totalPrice: true,
-          product: {
-            select: {
-              brand: true,
-              category: true,
+        }),
+        prisma.retailer.count({ where: { isActive: true } }),
+        prisma.orderItem.findMany({
+          select: {
+            quantity: true,
+            totalPrice: true,
+            product: {
+              select: {
+                brand: true,
+                category: true,
+              },
             },
           },
-        },
-      }),
-    ]);
+        }),
+      ]);
 
     // Financial Metrics
     const totalGmv = allOrders.reduce((sum, o) => sum + o.finalAmount, 0);
@@ -143,8 +138,7 @@ export class AnalyticsService {
       statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
     });
 
-    const fulfilledCount =
-      statusCounts.APPROVED + statusCounts.DISPATCHED + statusCounts.DELIVERED;
+    const fulfilledCount = statusCounts.APPROVED + statusCounts.DISPATCHED + statusCounts.DELIVERED;
     const fulfillmentRate =
       totalOrders > 0 ? Math.round((fulfilledCount / totalOrders) * 1000) / 10 : 100;
 
@@ -171,9 +165,7 @@ export class AnalyticsService {
         revenue: Math.round(data.revenue),
         ordersCount: data.count,
         percentage:
-          itemRevenueTotal > 0
-            ? Math.round((data.revenue / itemRevenueTotal) * 1000) / 10
-            : 0,
+          itemRevenueTotal > 0 ? Math.round((data.revenue / itemRevenueTotal) * 1000) / 10 : 0,
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
@@ -181,15 +173,15 @@ export class AnalyticsService {
       .map(([category, revenue]) => ({
         category,
         revenue: Math.round(revenue),
-        percentage:
-          itemRevenueTotal > 0
-            ? Math.round((revenue / itemRevenueTotal) * 1000) / 10
-            : 0,
+        percentage: itemRevenueTotal > 0 ? Math.round((revenue / itemRevenueTotal) * 1000) / 10 : 0,
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
     // Top Kiranas by spend
-    const retailerSpendMap: Record<string, { retailer: any; totalOrders: number; totalSpent: number }> = {};
+    const retailerSpendMap: Record<
+      string,
+      { retailer: any; totalOrders: number; totalSpent: number }
+    > = {};
     allOrders.forEach((o) => {
       const rId = o.retailerId;
       if (!retailerSpendMap[rId]) {
@@ -264,7 +256,7 @@ export class AnalyticsService {
 
     for (const r of retailers) {
       const lastOrder = r.orders[0];
-      let daysDormant = 0;
+      let daysDormant: number;
       let lastOrderDate: string | null = null;
       let lastOrderAmount: number | null = null;
 
@@ -325,7 +317,9 @@ export class AnalyticsService {
         creditLimit: true,
         outstandingBalance: true,
         orders: {
-          where: { status: { in: [OrderStatus.APPROVED, OrderStatus.DISPATCHED, OrderStatus.DELIVERED] } },
+          where: {
+            status: { in: [OrderStatus.APPROVED, OrderStatus.DISPATCHED, OrderStatus.DELIVERED] },
+          },
           orderBy: { createdAt: 'desc' },
           take: 5,
           select: { createdAt: true, finalAmount: true },
@@ -352,9 +346,7 @@ export class AnalyticsService {
 
     retailers.forEach((r) => {
       const utilPct =
-        r.creditLimit > 0
-          ? Math.round((r.outstandingBalance / r.creditLimit) * 1000) / 10
-          : 0;
+        r.creditLimit > 0 ? Math.round((r.outstandingBalance / r.creditLimit) * 1000) / 10 : 0;
 
       let status: 'EXCEEDED' | 'WARNING' | 'HEALTHY' = 'HEALTHY';
       if (r.outstandingBalance > r.creditLimit) {
@@ -423,7 +415,9 @@ export class AnalyticsService {
   /**
    * 4. Salesman Beat Targets & Field Performance
    */
-  static async getSalesmanPerformance(targetSalesmanId?: string): Promise<SalesmanPerformanceRecord[]> {
+  static async getSalesmanPerformance(
+    targetSalesmanId?: string
+  ): Promise<SalesmanPerformanceRecord[]> {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -472,8 +466,7 @@ export class AnalyticsService {
           ? Math.round((uniqueShopsVisitedToday / assignedShopsCount) * 1000) / 10
           : 0;
 
-      const targetAchievementPct =
-        Math.round((gmvToday / DAILY_TARGET_GMV) * 1000) / 10;
+      const targetAchievementPct = Math.round((gmvToday / DAILY_TARGET_GMV) * 1000) / 10;
 
       return {
         id: sm.id,
