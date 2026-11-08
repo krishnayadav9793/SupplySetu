@@ -9,10 +9,13 @@ describe('Cart Pricing & FMCG Scheme Calculations', () => {
     name: 'Surf Excel Easy Wash 1kg',
     brand: 'Hindustan Unilever',
     category: 'Home Care',
+    unit: 'CASE',
+    packSize: '1kg',
+    stock: 50,
+    minOrderQty: 1,
     mrp: 140,
     basePrice: 120,
     gstRate: 18,
-    isAvailable: true,
   };
 
   it('computes standard price, GST, and total without schemes', () => {
@@ -30,7 +33,7 @@ describe('Cart Pricing & FMCG Scheme Calculations', () => {
       ...baseProduct,
       scheme: {
         id: 'sch-1',
-        title: 'Buy 10 Get 1 Free',
+        name: 'Buy 10 Get 1 Free',
         schemeType: 'BUY_X_GET_Y_FREE',
         minQuantity: 10,
         freeQuantity: 1,
@@ -52,7 +55,7 @@ describe('Cart Pricing & FMCG Scheme Calculations', () => {
       ...baseProduct,
       scheme: {
         id: 'sch-2',
-        title: '5% off on 5+ packs',
+        name: '5% off on 5+ packs',
         schemeType: 'PERCENTAGE_DISCOUNT',
         minQuantity: 5,
         freeQuantity: 0,
