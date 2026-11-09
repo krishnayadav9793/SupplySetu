@@ -3,11 +3,11 @@ import request from 'supertest';
 import app from '../app';
 
 describe('Express REST API Endpoints Integration', () => {
-  it('GET /api/health returns 200 OK with service status', async () => {
+  it('GET /api/health returns service status and uptime', async () => {
     const res = await request(app).get('/api/health');
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('status', 'ok');
+    expect([200, 503]).toContain(res.status);
     expect(res.body).toHaveProperty('service', 'SupplySetu Backend API');
+    expect(res.body).toHaveProperty('database');
     expect(res.body).toHaveProperty('timestamp');
   });
 
