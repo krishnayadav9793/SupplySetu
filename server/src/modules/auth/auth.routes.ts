@@ -19,6 +19,7 @@ router.get('/demo-accounts', AuthController.getDemoAccounts);
 
 // Protected routes
 router.get('/me', authenticate, AuthController.me);
+router.post('/avatar', authenticate, AuthController.updateAvatar);
 router.post(
   '/change-password',
   authenticate,

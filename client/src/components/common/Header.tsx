@@ -10,8 +10,10 @@ import {
   Radio,
   Clock,
   Package,
+  Camera,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { ProfilePhotoModal } from './ProfilePhotoModal';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -33,6 +35,16 @@ export const Header = ({ setCurrentTab }: HeaderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMuted, setIsMuted] = useState(NotificationService.getIsMuted());
+  const [isProfilePhotoModalOpen, setIsProfilePhotoModalOpen] = useState(false);
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -339,21 +351,41 @@ export const Header = ({ setCurrentTab }: HeaderProps) => {
 
         {/* User Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 pl-1.5 sm:pl-2.5 border-l border-slate-200/80 dark:border-[#262B35] flex-shrink-0">
-          <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-tr from-amber-500 to-orange-400 p-0.5 flex-shrink-0">
-            <img
-              src={
-                role === 'ADMIN'
-                  ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80'
-                  : role === 'SALESMAN'
-                    ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80'
-                    : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'
-              }
-              alt={user?.name || 'User'}
-              className="h-full w-full rounded-full object-cover"
-            />
-          </div>
-          <div className="hidden xl:block text-left">
-            <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+          <button
+            type="button"
+            onClick={() => setIsProfilePhotoModalOpen(true)}
+            className="group relative h-7 w-7 sm:h-8 sm:w-8 rounded-full p-0.5 flex-shrink-0 cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-hidden"
+            title="Update Profile Photo (Stored in Supabase)"
+          >
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user?.name || 'User'}
+                className="h-full w-full rounded-full object-cover shadow-xs"
+              />
+            ) : (
+              <div
+                className={`h-full w-full rounded-full flex items-center justify-center font-black text-[10px] sm:text-xs text-white shadow-xs ${
+                  role === 'ADMIN'
+                    ? 'bg-gradient-to-tr from-violet-600 to-indigo-500'
+                    : role === 'SALESMAN'
+                      ? 'bg-gradient-to-tr from-blue-600 to-cyan-500'
+                      : 'bg-gradient-to-tr from-emerald-600 to-teal-500'
+                }`}
+              >
+                {getInitials(user?.name)}
+              </div>
+            )}
+            <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+              <Camera className="w-3 h-3" />
+            </div>
+          </button>
+          <div
+            onClick={() => setIsProfilePhotoModalOpen(true)}
+            className="hidden xl:block text-left cursor-pointer group"
+            title="Click to update profile photo"
+          >
+            <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               {user?.name || 'Authorized User'}
             </p>
             <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate max-w-[120px]">
@@ -408,6 +440,12 @@ export const Header = ({ setCurrentTab }: HeaderProps) => {
           <ThemeToggle />
         </div>
       </div>
+
+      {/* Profile Photo Upload Modal */}
+      <ProfilePhotoModal
+        isOpen={isProfilePhotoModalOpen}
+        onClose={() => setIsProfilePhotoModalOpen(false)}
+      />
     </header>
   );
 };

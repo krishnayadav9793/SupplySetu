@@ -168,6 +168,7 @@ export class AuthService {
         phone: user.phone,
         name: user.name,
         role: user.role,
+        avatarUrl: (user as any).avatarUrl || null,
         retailer: user.retailerProfile || null,
         needsPasswordChange: isDefaultPassword,
       },
@@ -195,6 +196,19 @@ export class AuthService {
       role: user.role,
       retailer: user.retailerProfile || null,
       needsPasswordChange: isDefaultPassword,
+      avatarUrl: (user as any).avatarUrl || null,
+    };
+  }
+
+  static async updateAvatar(userId: string, avatarUrl: string | null) {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl } as any,
+    });
+
+    return {
+      success: true,
+      avatarUrl: (updated as any).avatarUrl || null,
     };
   }
 

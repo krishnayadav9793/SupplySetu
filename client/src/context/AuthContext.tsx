@@ -28,6 +28,9 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<AuthResponse>;
   resetPassword: (phone: string, newPassword: string) => Promise<AuthResponse>;
   changePassword: (newPassword: string, currentPassword?: string) => Promise<AuthResponse>;
+  updateAvatar: (
+    avatarUrl: string | null
+  ) => Promise<{ success: boolean; avatarUrl?: string | null }>;
   logout: () => void;
   switchRole: (role: Role) => void;
   isLoading: boolean;
@@ -312,6 +315,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateAvatar = async (avatarUrl: string | null) => {
+    try {
+      const storedToken = token || localStorage.getItem('supplysetu-auth-token');
+      if (storedToken) {
+        await fetch(`${API_BASE}/auth/avatar`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ avatarUrl }),
+        });
+      }
+    } catch (err) {
+      console.warn('Backend avatar update unavailable, persisting locally:', err);
+    }
+
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, avatarUrl };
+      localStorage.setItem('supplysetu-auth-user', JSON.stringify(updated));
+      return updated;
+    });
+
+    return { success: true, avatarUrl };
+  };
+
   const switchRole = async (newRole: Role) => {
     const demo = DEMO_USERS[newRole];
     if (demo) {
@@ -329,6 +359,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         register,
         resetPassword,
         changePassword,
+        updateAvatar,
         logout,
         switchRole,
         isLoading,

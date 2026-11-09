@@ -7,6 +7,7 @@ export interface User {
   phone: string;
   name: string;
   role: Role;
+  avatarUrl?: string | null;
   needsPasswordChange?: boolean;
   isFirstLogin?: boolean;
   retailer?: RetailerProfile | null;

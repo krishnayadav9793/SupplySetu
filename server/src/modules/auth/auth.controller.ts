@@ -113,6 +113,23 @@ export class AuthController {
     }
   }
 
+  static async updateAvatar(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ success: false, message: 'Unauthorized' });
+        return;
+      }
+      const { avatarUrl } = req.body;
+      const result = await AuthService.updateAvatar(req.user.id, avatarUrl || null);
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Avatar update failed',
+      });
+    }
+  }
+
   static async getDemoAccounts(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const accounts = await AuthService.getDemoAccounts();
