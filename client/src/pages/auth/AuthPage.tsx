@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Store,
   Building2,
@@ -12,10 +12,13 @@ import {
   EyeOff,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Sparkles,
 } from 'lucide-react';
 import { useAuth, RegisterData } from '../../context/AuthContext';
 import { Role } from '../../types';
+import { ThemeToggle } from '../../components/common/ThemeToggle';
+import { useToast } from '../../context/ToastContext';
 
 interface DemoAccount {
   role: Role;
@@ -31,10 +34,10 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     role: 'RETAILER',
     title: 'Kirana Retailer',
-    name: 'Anil Patel (Shri Ganesh Kirana)',
+    name: 'Anil Patel (Kirana Store)',
     phone: '9893000003',
-    badge: 'Tier 1 Dealer Rate',
-    description: 'Place orders, browse FMCG catalog, use AI order pad',
+    badge: 'Tier 1 Dealer',
+    description: 'Place orders, browse FMCG catalog',
     icon: Store,
   },
   {
@@ -42,33 +45,41 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     title: 'Beat Salesman',
     name: 'Vikram Sharma (Beat #4)',
     phone: '9893000002',
-    badge: 'Offline IndexedDB',
-    description: 'Book offline orders in Lordganj & Sarafa beat',
+    badge: 'Beat Delivery',
+    description: 'Book offline orders in Lordganj',
     icon: Bike,
   },
   {
     role: 'ADMIN',
-    title: 'Distributor Desk',
-    name: 'Ramesh Gupta (Distribution Head)',
+    title: 'Distributor Admin',
+    name: 'Ramesh Gupta (Head)',
     phone: '9893000001',
-    badge: 'Tally ERP & Approvals',
-    description: 'Approve orders, monitor credit holds, export CSV',
+    badge: 'Tally & Dispatch',
+    description: 'Approve orders, monitor credit',
     icon: Building2,
   },
 ];
 
 export const AuthPage: React.FC = () => {
   const { login, register } = useAuth();
+  const { showError, showSuccess } = useToast();
 
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isPhoneError, setIsPhoneError] = useState(false);
+  const [isPasswordError, setIsPasswordError] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
+  // Form input refs for quick focus on error
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Login form state
-  const [loginPhone, setLoginPhone] = useState('9893000003');
-  const [loginPassword, setLoginPassword] = useState('password123');
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Signup form state
   const [signupData, setSignupData] = useState<RegisterData>({
@@ -84,13 +95,45 @@ export const AuthPage: React.FC = () => {
     gstNumber: '',
   });
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits, max 10
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setLoginPhone(digitsOnly);
+    if (isPhoneError) setIsPhoneError(false);
+  };
+
   const handleLoginSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMessage(null);
 
-    const cleanPhone = loginPhone.trim();
-    if (!cleanPhone || cleanPhone.length < 10) {
-      setErrorMessage('Please enter a valid 10-digit mobile number');
+    const cleanPhone = loginPhone.replace(/\D/g, '').trim();
+    if (!cleanPhone) {
+      setIsPhoneError(true);
+      const msg = 'Please enter your 10-digit registered mobile number';
+      setErrorMessage(msg);
+      showError('Invalid Mobile Number', msg);
+      phoneInputRef.current?.focus();
+      return;
+    }
+
+    if (cleanPhone.length !== 10) {
+      setIsPhoneError(true);
+      const msg = `Mobile number must be exactly 10 digits (entered ${cleanPhone.length}).`;
+      setErrorMessage(msg);
+      showError(
+        'Invalid Mobile Number',
+        `Entered ${cleanPhone.length} of 10 digits. Please enter a complete 10-digit mobile number.`
+      );
+      phoneInputRef.current?.focus();
+      return;
+    }
+
+    if (!loginPassword || loginPassword.trim() === '') {
+      setIsPasswordError(true);
+      const msg = 'Please enter your account password';
+      setErrorMessage(msg);
+      showError('Password Required', 'Please enter your account password to sign in.');
+      passwordInputRef.current?.focus();
       return;
     }
 
@@ -98,28 +141,83 @@ export const AuthPage: React.FC = () => {
     try {
       const res = await login(cleanPhone, loginPassword);
       if (!res.success) {
-        setErrorMessage(res.error || 'Invalid credentials. Please verify your phone and password.');
+        const err = res.error || 'Incorrect mobile number or password.';
+        const isDemoPhone = ['9893000001', '9893000002', '9893000003'].includes(cleanPhone);
+        const lowerErr = err.toLowerCase();
+        const isUserNotFound =
+          lowerErr.includes('not found') || lowerErr.includes('not registered');
+
+        if (isUserNotFound) {
+          setIsPhoneError(true);
+          setIsPasswordError(false);
+          const notFoundMsg = `Mobile number ${cleanPhone} is not registered in Jabalpur Hub.`;
+          setErrorMessage(notFoundMsg);
+          showError(
+            'Invalid Mobile Number',
+            `No account found with number ${cleanPhone}. Please check your phone number or register your shop.`
+          );
+          phoneInputRef.current?.focus();
+        } else if (loginPassword === 'password123' && !isDemoPhone) {
+          setIsPasswordError(true);
+          setIsPhoneError(false);
+          const demoMsg =
+            "Default password 'password123' only works for demo accounts. For your custom account, please enter the password chosen during registration.";
+          setErrorMessage(demoMsg);
+          showError('Incorrect Password', demoMsg);
+          passwordInputRef.current?.focus();
+          passwordInputRef.current?.select();
+        } else {
+          setIsPasswordError(true);
+          setIsPhoneError(false);
+          setErrorMessage(err);
+          showError(
+            'Incorrect Password',
+            'The password you entered is incorrect. Please verify your credentials and try again.'
+          );
+          passwordInputRef.current?.focus();
+          passwordInputRef.current?.select();
+        }
+        setFailedAttempts((prev) => prev + 1);
+      } else {
+        setIsPhoneError(false);
+        setIsPasswordError(false);
+        setFailedAttempts(0);
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Login failed. Please check your connection.');
+      const networkMsg =
+        err?.message ||
+        'Unable to connect to authentication server. Please check your network connection.';
+      setErrorMessage(networkMsg);
+      showError('Connection Error', networkMsg);
+      setIsPasswordError(true);
     } finally {
       setLoading(false);
     }
   };
 
   const handleQuickDemoLogin = async (account: DemoAccount) => {
+    setActiveTab('login');
     setLoginPhone(account.phone);
     setLoginPassword('password123');
     setErrorMessage(null);
+    setIsPhoneError(false);
+    setIsPasswordError(false);
     setLoading(true);
 
     try {
       const res = await login(account.phone, 'password123');
       if (!res.success) {
-        setErrorMessage(res.error || 'Failed to sign in with demo account');
+        const msg = res.error || 'Failed to sign in with demo account';
+        setErrorMessage(msg);
+        showError('Demo Login Failed', msg);
+        setIsPasswordError(true);
+      } else {
+        setFailedAttempts(0);
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Demo login error');
+      const msg = err?.message || 'Demo login error';
+      setErrorMessage(msg);
+      showError('Demo Login Error', msg);
     } finally {
       setLoading(false);
     }
@@ -130,87 +228,110 @@ export const AuthPage: React.FC = () => {
     setErrorMessage(null);
 
     if (!signupData.name.trim()) {
-      setErrorMessage('Full name is required');
+      const msg = 'Full name is required';
+      setErrorMessage(msg);
+      showError('Incomplete Form', msg);
       return;
     }
-    if (!signupData.phone.trim() || signupData.phone.trim().length < 10) {
-      setErrorMessage('Please enter a valid 10-digit mobile number');
+    const cleanPhone = signupData.phone.replace(/\D/g, '').trim();
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      const msg = 'Please enter a valid 10-digit mobile number';
+      setErrorMessage(msg);
+      showError('Invalid Mobile Number', msg);
       return;
     }
     if (!signupData.password || signupData.password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters');
+      const msg = 'Password must be at least 6 characters';
+      setErrorMessage(msg);
+      showError('Password Too Short', msg);
       return;
     }
     if (signupData.role === 'RETAILER' && !signupData.shopName?.trim()) {
-      setErrorMessage('Kirana Shop Name is required for retailers');
+      const msg = 'Kirana Shop Name is required for retailers';
+      setErrorMessage(msg);
+      showError('Shop Name Required', msg);
       return;
     }
 
     setLoading(true);
     try {
-      const res = await register(signupData);
+      const res = await register({ ...signupData, phone: cleanPhone });
       if (res.success) {
         setSuccessMessage('Account registered successfully! Redirecting to hub...');
+        showSuccess(
+          'Registration Successful',
+          'Welcome to SupplySetu! Logging into your dashboard...'
+        );
       } else {
-        setErrorMessage(res.error || 'Registration failed. Mobile number may already exist.');
+        const errMsg = res.error || 'Registration failed. Mobile number may already exist.';
+        setErrorMessage(errMsg);
+        showError('Registration Failed', errMsg);
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Registration failed');
+      const errMsg = err?.message || 'Registration failed';
+      setErrorMessage(errMsg);
+      showError('Registration Error', errMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-screen bg-[#F4F6F9] dark:bg-[#0B0D11] text-slate-800 dark:text-[#E2E8F0] flex flex-col justify-between overflow-y-auto">
+    <div className="min-h-dvh w-full bg-[#F4F6F9] dark:bg-[#0B0D11] text-slate-800 dark:text-[#E2E8F0] flex flex-col justify-between overflow-x-hidden relative">
       {/* Top Simple Header */}
-      <header className="h-16 w-full px-6 flex items-center justify-between border-b border-slate-200/80 dark:border-[#1E222A] bg-white/80 dark:bg-[#121418]/80 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm">
+      <header className="h-16 w-full px-4 sm:px-6 flex items-center justify-between border-b border-slate-200/80 dark:border-[#1E222A] bg-white/80 dark:bg-[#121418]/80 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-xs flex-shrink-0">
             <div className="h-4 w-4 border-2 border-white rotate-45 rounded-[2px]" />
           </div>
           <div>
-            <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+            <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
               Supply<span className="text-emerald-500">Setu</span>
             </span>
             <span className="ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20">
-              Jabalpur FMCG Hub
+              Jabalpur Hub
             </span>
           </div>
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
-          B2B Ordering &bull; Real-Time Inventory &bull; Tally ERP
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500 dark:text-slate-400 hidden md:block">
+            B2B Ordering &bull; Real-Time Inventory &bull; Tally ERP
+          </span>
+          <ThemeToggle />
         </div>
       </header>
 
       {/* Main Authentication Card Container */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-lg bg-white dark:bg-[#16181E] rounded-3xl border border-slate-200/80 dark:border-[#222631] shadow-xl overflow-hidden">
+      <main className="flex-1 flex items-center justify-center p-3.5 sm:p-6 lg:p-8">
+        <div className="w-full max-w-md bg-white dark:bg-[#151820] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#222631] shadow-xl overflow-hidden my-auto">
           {/* Header Banner */}
-          <div className="p-6 sm:p-8 pb-4 text-center">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20 mb-3">
+          <div className="p-5 sm:p-7 pb-3 text-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20 mb-2.5">
               <Sparkles className="w-3.5 h-3.5" />
               <span>FMCG Distribution Network</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Welcome to SupplySetu
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto">
-              Access live wholesale catalogue, promotional schemes, and beat orders across Jabalpur.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+              Live wholesale catalogue & beat order management across Jabalpur.
             </p>
 
             {/* Tab Switcher */}
-            <div className="mt-6 p-1 bg-slate-100 dark:bg-[#1C2028] rounded-2xl flex gap-1">
+            <div className="mt-4 p-1 bg-slate-100 dark:bg-[#1C2028] rounded-xl flex gap-1">
               <button
                 type="button"
                 onClick={() => {
                   setActiveTab('login');
                   setErrorMessage(null);
                   setSuccessMessage(null);
+                  setIsPhoneError(false);
+                  setIsPasswordError(false);
                 }}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'login'
-                    ? 'bg-white dark:bg-[#121418] text-slate-900 dark:text-white shadow-sm'
+                    ? 'bg-white dark:bg-[#121418] text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -222,10 +343,12 @@ export const AuthPage: React.FC = () => {
                   setActiveTab('signup');
                   setErrorMessage(null);
                   setSuccessMessage(null);
+                  setIsPhoneError(false);
+                  setIsPasswordError(false);
                 }}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'signup'
-                    ? 'bg-white dark:bg-[#121418] text-slate-900 dark:text-white shadow-sm'
+                    ? 'bg-white dark:bg-[#121418] text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -234,82 +357,140 @@ export const AuthPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Alert Messages */}
-          <div className="px-6 sm:px-8">
-            {errorMessage && (
-              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2 mb-4">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-            {successMessage && (
-              <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2 mb-4">
+          {/* Registration Success Banner */}
+          {successMessage && (
+            <div className="px-5 sm:px-7 pb-1">
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 <span>{successMessage}</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Form Content */}
-          <div className="p-6 sm:p-8 pt-2">
+          <div className="p-5 sm:p-7 pt-1">
             {activeTab === 'login' ? (
               /* LOGIN TAB */
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <form onSubmit={handleLoginSubmit} className="space-y-3.5" noValidate>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Mobile Number
                   </label>
                   <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-slate-400 font-mono text-xs pr-2 border-r border-slate-200 dark:border-slate-700">
+                    <div
+                      className={`absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 font-mono text-xs pr-2 border-r transition-colors ${
+                        isPhoneError
+                          ? 'text-rose-500 border-rose-300 dark:border-rose-700'
+                          : 'text-slate-400 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
                       <span>🇮🇳</span>
                       <span>+91</span>
                     </div>
                     <input
+                      ref={phoneInputRef}
                       type="tel"
+                      inputMode="numeric"
                       value={loginPhone}
-                      onChange={(e) => setLoginPhone(e.target.value)}
-                      placeholder="9893000003"
+                      onChange={handlePhoneChange}
+                      placeholder="e.g. 9893000003"
                       maxLength={10}
                       required
-                      className="w-full pl-20 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-[#1A1D24] border border-slate-200/80 dark:border-[#262B35] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      className={`w-full pl-20 pr-4 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-[#1A1D24] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all ${
+                        isPhoneError
+                          ? 'border-2 border-rose-500 bg-rose-50/20 ring-2 ring-rose-500/20 animate-shake'
+                          : 'border border-slate-200/80 dark:border-[#262B35] focus:ring-2 focus:ring-emerald-500/40'
+                      }`}
                     />
                   </div>
+                  {isPhoneError && (
+                    <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1 animate-shake">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>Please enter a valid 10-digit mobile number</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                       Password
                     </label>
-                    <span className="text-[11px] text-slate-400">Default: password123</span>
+                    <span className="text-[11px] text-slate-400">Demo accounts: password123</span>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Lock
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${
+                        isPasswordError ? 'text-rose-500' : 'text-slate-400'
+                      }`}
+                    />
                     <input
+                      ref={passwordInputRef}
                       type={showPassword ? 'text' : 'password'}
                       value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
+                      onChange={(e) => {
+                        setLoginPassword(e.target.value);
+                        if (isPasswordError) setIsPasswordError(false);
+                      }}
+                      placeholder="Enter account password"
                       required
-                      className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-[#1A1D24] border border-slate-200/80 dark:border-[#262B35] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      className={`w-full pl-10 pr-10 py-2.5 text-sm rounded-xl bg-slate-50 dark:bg-[#1A1D24] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all ${
+                        isPasswordError
+                          ? 'border-2 border-rose-500 bg-rose-50/20 ring-2 ring-rose-500/20 animate-shake'
+                          : 'border border-slate-200/80 dark:border-[#262B35] focus:ring-2 focus:ring-emerald-500/40'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-1"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {isPasswordError && (
+                    <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1 animate-shake">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>Incorrect password. Please verify and try again.</span>
+                    </p>
+                  )}
                 </div>
+
+                {/* INLINE ERROR BANNER RIGHT ABOVE SUBMIT BUTTON */}
+                {errorMessage && (
+                  <div
+                    role="alert"
+                    className="p-3 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5 shadow-sm transition-all animate-shake"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 flex-1">
+                      <p className="font-bold text-rose-800 dark:text-rose-200">
+                        {isPasswordError
+                          ? 'Incorrect Password'
+                          : isPhoneError
+                            ? 'Invalid Mobile Number'
+                            : 'Sign In Error'}
+                      </p>
+                      <p className="leading-relaxed opacity-95">{errorMessage}</p>
+                      {failedAttempts >= 2 && (
+                        <p className="text-[11px] font-semibold text-rose-800 dark:text-rose-200 mt-1">
+                          ⚠️ {failedAttempts} consecutive failed attempts.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 mt-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 min-h-[42px]"
                 >
                   {loading ? (
-                    <span>Signing In...</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Verifying Credentials...</span>
+                    </div>
                   ) : (
                     <>
                       <span>Enter SupplySetu Hub</span>
@@ -318,44 +499,39 @@ export const AuthPage: React.FC = () => {
                   )}
                 </button>
 
-                {/* 1-Click Quick Demo Switcher */}
-                <div className="pt-5 mt-5 border-t border-slate-100 dark:border-[#222631]">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">
-                    Or Select A Demo Account (1-Click Login)
-                  </p>
+                {/* 1-Click Quick Demo Switcher - Compact Responsive 3-Column Grid */}
+                <div className="pt-3.5 mt-3 border-t border-slate-100 dark:border-[#222631]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Demo Accounts
+                    </span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                      1-Click Login
+                    </span>
+                  </div>
 
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {DEMO_ACCOUNTS.map((acc) => {
                       const Icon = acc.icon;
                       return (
-                        <div
+                        <button
                           key={acc.phone}
+                          type="button"
                           onClick={() => handleQuickDemoLogin(acc)}
-                          className="p-3 rounded-xl border border-slate-200/70 dark:border-[#222631] bg-slate-50/50 dark:bg-[#181B22] hover:border-emerald-500/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer flex items-center justify-between group"
+                          className="p-2 sm:p-2.5 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-slate-50/70 dark:bg-[#181B22] hover:border-emerald-500/60 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30 transition-all cursor-pointer flex sm:flex-col items-center sm:items-start justify-between sm:justify-start text-left group"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                              <Icon className="w-4 h-4" />
+                          <div className="flex items-center gap-2 mb-0 sm:mb-1">
+                            <div className="h-6 w-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-3.5 h-3.5" />
                             </div>
-                            <div className="text-left">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                  {acc.title}
-                                </span>
-                                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                                  {acc.phone}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[240px]">
-                                {acc.name}
-                              </p>
-                            </div>
+                            <span className="text-[11px] font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                              {acc.title}
+                            </span>
                           </div>
-
-                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">
-                            Select &rarr;
+                          <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            {acc.phone}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -363,11 +539,11 @@ export const AuthPage: React.FC = () => {
               </form>
             ) : (
               /* SIGNUP TAB */
-              <form onSubmit={handleSignupSubmit} className="space-y-3.5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <form onSubmit={handleSignupSubmit} className="space-y-3" noValidate>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Merchant / Owner Name *
+                      Merchant Name *
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
@@ -375,7 +551,7 @@ export const AuthPage: React.FC = () => {
                         type="text"
                         value={signupData.name}
                         onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
-                        placeholder="e.g. Ramesh Patel"
+                        placeholder="Ramesh Patel"
                         required
                         className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A1D24] border border-slate-200/80 dark:border-[#262B35] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
                       />
@@ -390,8 +566,14 @@ export const AuthPage: React.FC = () => {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                       <input
                         type="tel"
+                        inputMode="numeric"
                         value={signupData.phone}
-                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                        onChange={(e) =>
+                          setSignupData({
+                            ...signupData,
+                            phone: e.target.value.replace(/\D/g, '').slice(0, 10),
+                          })
+                        }
                         placeholder="9893XXXXXX"
                         maxLength={10}
                         required
@@ -403,7 +585,7 @@ export const AuthPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Kirana Shop / Business Name *
+                    Kirana Shop Name *
                   </label>
                   <div className="relative">
                     <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
@@ -411,7 +593,7 @@ export const AuthPage: React.FC = () => {
                       type="text"
                       value={signupData.shopName}
                       onChange={(e) => setSignupData({ ...signupData, shopName: e.target.value })}
-                      placeholder="e.g. Shri Krishna Kirana & General Store"
+                      placeholder="Shri Krishna Kirana & General Store"
                       required={signupData.role === 'RETAILER'}
                       className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#1A1D24] border border-slate-200/80 dark:border-[#262B35] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
                     />
@@ -434,10 +616,10 @@ export const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      City / Territory
+                      City
                     </label>
                     <input
                       type="text"
@@ -461,7 +643,7 @@ export const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       GSTIN (Optional)
@@ -489,13 +671,27 @@ export const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* SIGNUP ERROR BANNER */}
+                {errorMessage && (
+                  <div
+                    role="alert"
+                    className="p-3 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 mt-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="w-full py-2.5 mt-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 min-h-[42px]"
                 >
                   {loading ? (
-                    <span>Registering Account...</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Registering Account...</span>
+                    </div>
                   ) : (
                     <>
                       <span>Complete Registration & Open Dashboard</span>
@@ -507,12 +703,11 @@ export const AuthPage: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
-      <footer className="py-4 px-6 text-center text-xs text-slate-400 border-t border-slate-200/60 dark:border-[#1E222A]">
-        SupplySetu &bull; Jabalpur Wholesale FMCG Distribution &bull; Powered by React, Node.js &
-        PostgreSQL
+      <footer className="py-3 px-4 sm:px-6 text-center text-xs text-slate-400 border-t border-slate-200/60 dark:border-[#1E222A]">
+        SupplySetu &bull; Jabalpur Wholesale FMCG Distribution Network
       </footer>
     </div>
   );

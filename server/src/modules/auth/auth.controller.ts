@@ -80,6 +80,39 @@ export class AuthController {
     }
   }
 
+  static async resetPassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { phone, newPassword } = req.body;
+      const result = await AuthService.resetPassword(phone, newPassword);
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Password update failed',
+      });
+    }
+  }
+
+  static async changePassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ success: false, message: 'Unauthorized' });
+        return;
+      }
+      const { newPassword, currentPassword } = req.body;
+      const result = await AuthService.changePassword(req.user.id, newPassword, currentPassword);
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Password update failed',
+      });
+    }
+  }
+
   static async getDemoAccounts(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const accounts = await AuthService.getDemoAccounts();

@@ -26,6 +26,8 @@ interface AuthContextType {
   token: string | null;
   login: (phone: string, password?: string) => Promise<AuthResponse>;
   register: (data: RegisterData) => Promise<AuthResponse>;
+  resetPassword: (phone: string, newPassword: string) => Promise<AuthResponse>;
+  changePassword: (newPassword: string, currentPassword?: string) => Promise<AuthResponse>;
   logout: () => void;
   switchRole: (role: Role) => void;
   isLoading: boolean;
@@ -34,7 +36,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const DEMO_USERS: Record<Role, User> = {
   ADMIN: {
@@ -208,14 +210,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (err: any) {
       console.warn('Backend API unreachable, checking demo fallback:', err);
-      // Fallback: match by demo phone
+      // Fallback: match by demo phone if password matches demo default
       const matched = Object.values(DEMO_USERS).find((u) => u.phone === phone);
-      if (matched) {
+      if (matched && password === 'password123') {
         setUser(matched);
         setToken('demo-jwt-token-session');
         localStorage.setItem('supplysetu-auth-user', JSON.stringify(matched));
         localStorage.setItem('supplysetu-auth-token', 'demo-jwt-token-session');
         return { success: true };
+      }
+      if (matched && password !== 'password123') {
+        return { success: false, error: 'Incorrect password entered for this demo profile' };
       }
       return { success: false, error: 'Could not connect to authentication server' };
     } finally {
@@ -251,6 +256,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const resetPassword = async (phone: string, newPassword: string): Promise<AuthResponse> => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, newPassword }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: data.message || 'Failed to update password' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Server connection error' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const changePassword = async (
+    newPassword: string,
+    currentPassword?: string
+  ): Promise<AuthResponse> => {
+    setIsLoading(true);
+    try {
+      const storedToken = token || localStorage.getItem('supplysetu-auth-token');
+      const res = await fetch(`${API_BASE}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${storedToken}`,
+        },
+        body: JSON.stringify({ newPassword, currentPassword }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (user) {
+          const updatedUser = { ...user, needsPasswordChange: false };
+          setUser(updatedUser);
+          localStorage.setItem('supplysetu-auth-user', JSON.stringify(updatedUser));
+        }
+        return { success: true };
+      } else {
+        return { success: false, error: data.message || 'Failed to update password' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Server connection error' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const switchRole = async (newRole: Role) => {
     const demo = DEMO_USERS[newRole];
     if (demo) {
@@ -266,6 +327,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         token,
         login,
         register,
+        resetPassword,
+        changePassword,
         logout,
         switchRole,
         isLoading,

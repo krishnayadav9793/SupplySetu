@@ -17,9 +17,11 @@ import {
   Clock,
   ShieldCheck,
   Building,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { ChangePasswordModal } from './ChangePasswordModal';
 
 interface SidebarProps {
   currentTab: string;
@@ -32,6 +34,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
 
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   // Navigation items based on role
   const getNavItems = () => {
@@ -227,6 +230,27 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
               </div>
             </div>
 
+            {/* Account Security */}
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                  Account Security
+                </p>
+                <p className="text-[11px] text-slate-400">Manage login credentials</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSettingsModal(false);
+                  setShowChangePasswordModal(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Change Password</span>
+              </button>
+            </div>
+
             <button
               onClick={() => setShowSettingsModal(false)}
               className="mt-4 w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow-xs cursor-pointer"
@@ -236,6 +260,13 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
           </div>
         </div>
       )}
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        isFirstLogin={false}
+      />
     </>
   );
 };

@@ -1,50 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
-import { RetailerDashboard } from './pages/retailer/RetailerDashboard';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { SalesmanDashboard } from './pages/salesman/SalesmanDashboard';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { ToastProvider } from './context/ToastContext';
 import { CartDrawer } from './components/cart/CartDrawer';
-import { AuthPage } from './pages/auth/AuthPage';
-import { Role } from './types';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { DashboardSkeleton } from './components/common/DashboardSkeleton';
+import { ChangePasswordModal } from './components/common/ChangePasswordModal';
+import { useTabRouting } from './hooks/useTabRouting';
 
-const ROLE_ALLOWED_TABS: Record<Role, string[]> = {
-  ADMIN: ['orders', 'dashboard', 'wallet', 'retailers', 'catalogue', 'schemes', 'export'],
-  SALESMAN: ['beat', 'punch', 'catalogue', 'schemes', 'performance'],
-  RETAILER: ['shop', 'cart', 'ai-pad', 'schemes', 'my-orders', 'credit'],
-};
-
-const getDefaultTabForRole = (userRole: Role): string => {
-  switch (userRole) {
-    case 'ADMIN':
-      return 'orders';
-    case 'SALESMAN':
-      return 'beat';
-    case 'RETAILER':
-    default:
-      return 'shop';
-  }
-};
+// Dynamically split dashboard bundles for optimal initial page-load performance
+const AdminDashboard = lazy(() =>
+  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
+);
+const SalesmanDashboard = lazy(() =>
+  import('./pages/salesman/SalesmanDashboard').then((m) => ({ default: m.SalesmanDashboard }))
+);
+const RetailerDashboard = lazy(() =>
+  import('./pages/retailer/RetailerDashboard').then((m) => ({ default: m.RetailerDashboard }))
+);
+const AuthPage = lazy(() => import('./pages/auth/AuthPage').then((m) => ({ default: m.AuthPage })));
 
 function DashboardContent() {
-  const { user, role, isLoading, isVerifying, logout } = useAuth();
-  const [currentTab, setCurrentTab] = useState<string>(() => getDefaultTabForRole(role));
+  const { user, role, isVerifying, logout } = useAuth();
+  const { currentTab, setCurrentTab } = useTabRouting(role);
+  const [showFirstTimePasswordModal, setShowFirstTimePasswordModal] = useState(false);
 
-  // Align currentTab with authorized role tabs on login or role switch
   useEffect(() => {
     if (user) {
-      const allowed = ROLE_ALLOWED_TABS[user.role] || [];
-      if (!allowed.includes(currentTab)) {
-        setCurrentTab(getDefaultTabForRole(user.role));
+      const hasDismissed = sessionStorage.getItem(`supplysetu_dismissed_pwd_${user.id}`);
+      if (user.needsPasswordChange && !hasDismissed) {
+        setShowFirstTimePasswordModal(true);
       }
     }
-  }, [user?.id, user?.role, currentTab]);
+  }, [user]);
 
-  // Initial token verification splash screen
-  if (isVerifying || (isLoading && !user)) {
+  // Initial token verification splash screen on page load
+  if (isVerifying) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#F4F6F9] dark:bg-[#0B0D11] text-slate-500">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mb-3" />
@@ -55,7 +49,11 @@ function DashboardContent() {
 
   // If not authenticated or token invalid, strictly render Login / Register screen
   if (!user) {
-    return <AuthPage />;
+    return (
+      <Suspense fallback={<DashboardSkeleton />}>
+        <AuthPage />
+      </Suspense>
+    );
   }
 
   return (
@@ -68,29 +66,42 @@ function DashboardContent() {
         <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-y-auto bg-slate-50/60 dark:bg-[#0E1015]">
-          {/* Strictly separate dashboards based on authorized user role */}
-          {role === 'ADMIN' ? (
-            <AdminDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
-          ) : role === 'SALESMAN' ? (
-            <SalesmanDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
-          ) : role === 'RETAILER' ? (
-            <RetailerDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600">
-              <p className="font-bold text-base">Unauthorized Role Access</p>
-              <p className="text-xs mt-1 text-slate-500">
-                Your role &apos;{role}&apos; is not recognized for this dashboard.
-              </p>
-              <button
-                onClick={logout}
-                className="mt-4 px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold"
-              >
-                Sign In With Valid Account
-              </button>
-            </div>
-          )}
+          <ErrorBoundary>
+            <Suspense fallback={<DashboardSkeleton />}>
+              {/* Strictly separate dashboards based on authorized user role */}
+              {role === 'ADMIN' ? (
+                <AdminDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
+              ) : role === 'SALESMAN' ? (
+                <SalesmanDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
+              ) : role === 'RETAILER' ? (
+                <RetailerDashboard currentTab={currentTab} setCurrentTab={setCurrentTab} />
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600">
+                  <p className="font-bold text-base">Unauthorized Role Access</p>
+                  <p className="text-xs mt-1 text-slate-500">
+                    Your role &apos;{role}&apos; is not recognized for this dashboard.
+                  </p>
+                  <button
+                    onClick={logout}
+                    className="mt-4 px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold"
+                  >
+                    Sign In With Valid Account
+                  </button>
+                </div>
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
+
+      {/* First-time login / Default password change modal */}
+      {showFirstTimePasswordModal && (
+        <ChangePasswordModal
+          isOpen={showFirstTimePasswordModal}
+          onClose={() => setShowFirstTimePasswordModal(false)}
+          isFirstLogin={true}
+        />
+      )}
 
       {/* Global Slide-over Cart Drawer (available only for retailers) */}
       {role === 'RETAILER' && <CartDrawer />}
@@ -100,12 +111,16 @@ function DashboardContent() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <CartProvider>
-          <DashboardContent />
-        </CartProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <DashboardContent />
+            </CartProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

@@ -7,6 +7,8 @@ export interface User {
   phone: string;
   name: string;
   role: Role;
+  needsPasswordChange?: boolean;
+  isFirstLogin?: boolean;
   retailer?: RetailerProfile | null;
   salesman?: {
     id: string;

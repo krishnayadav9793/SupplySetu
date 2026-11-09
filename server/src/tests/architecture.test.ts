@@ -2,8 +2,12 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../app';
 import { OrdersService } from '../modules/orders/orders.service';
+import { AuthService } from '../modules/auth/auth.service';
 
 describe('Backend Architecture & Robustness Suite', () => {
+  it('AuthService strictly rejects empty or incorrect passwords without backdoor bypass', async () => {
+    await expect(AuthService.login('9893000001', '')).rejects.toThrow('Password is required');
+  });
   it('Zod validation middleware rejects order creation with 0 or negative items', async () => {
     const res = await request(app).post('/api/orders').send({
       items: [],

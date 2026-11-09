@@ -6,7 +6,7 @@ import { AuthUser } from '../../middleware/auth';
 
 export interface RegisterInput {
   phone: string;
-  password?: string;
+  password: string;
   name: string;
   role?: Role;
   shopName?: string;
@@ -22,7 +22,7 @@ export class AuthService {
   static async register(input: RegisterInput) {
     const {
       phone,
-      password = 'password123',
+      password,
       name,
       role = Role.RETAILER,
       shopName,
@@ -39,6 +39,9 @@ export class AuthService {
     }
     if (!name || name.trim() === '') {
       throw new Error('Name is required');
+    }
+    if (!password || password.trim().length < 6) {
+      throw new Error('Password is required and must be at least 6 characters');
     }
 
     // Check if phone already registered
@@ -118,8 +121,15 @@ export class AuthService {
   }
 
   static async login(phone: string, password?: string) {
+    if (!phone || phone.trim() === '') {
+      throw new Error('Phone number is required');
+    }
+    if (!password || password.trim() === '') {
+      throw new Error('Password is required');
+    }
+
     const user = await prisma.user.findUnique({
-      where: { phone },
+      where: { phone: phone.trim() },
       include: {
         retailerProfile: true,
       },
@@ -133,12 +143,9 @@ export class AuthService {
       throw new Error('Account is inactive. Please contact your distributor.');
     }
 
-    // If password is provided, verify it (otherwise if password123 or demo mode)
-    if (password) {
-      const isValid = await bcrypt.compare(password, user.passwordHash);
-      if (!isValid && password !== 'password123') {
-        throw new Error('Invalid credentials');
-      }
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) {
+      throw new Error('Incorrect password. Please verify your credentials and try again.');
     }
 
     const payload: AuthUser = {
@@ -152,6 +159,8 @@ export class AuthService {
       expiresIn: '7d',
     });
 
+    const isDefaultPassword = await bcrypt.compare('password123', user.passwordHash);
+
     return {
       token,
       user: {
@@ -160,6 +169,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         retailer: user.retailerProfile || null,
+        needsPasswordChange: isDefaultPassword,
       },
     };
   }
@@ -176,12 +186,76 @@ export class AuthService {
       throw new Error('User not found');
     }
 
+    const isDefaultPassword = await bcrypt.compare('password123', user.passwordHash);
+
     return {
       id: user.id,
       phone: user.phone,
       name: user.name,
       role: user.role,
       retailer: user.retailerProfile || null,
+      needsPasswordChange: isDefaultPassword,
+    };
+  }
+
+  static async changePassword(userId: string, newPassword: string, currentPassword?: string) {
+    if (!newPassword || newPassword.trim().length < 6) {
+      throw new Error('New password must be at least 6 characters');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (currentPassword && currentPassword.trim() !== '') {
+      const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        throw new Error('Current password does not match');
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword.trim(), 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    return {
+      success: true,
+      message: 'Password updated successfully.',
+    };
+  }
+
+  static async resetPassword(phone: string, newPassword: string) {
+    if (!phone || phone.trim() === '') {
+      throw new Error('Phone number is required');
+    }
+    if (!newPassword || newPassword.trim().length < 6) {
+      throw new Error('New password must be at least 6 characters');
+    }
+
+    const cleanPhone = phone.trim();
+    const user = await prisma.user.findUnique({
+      where: { phone: cleanPhone },
+    });
+
+    if (!user) {
+      throw new Error('No user account found with this phone number');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword.trim(), 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    return {
+      success: true,
+      message: 'Password updated successfully. Please log in with your new credentials.',
     };
   }
 
