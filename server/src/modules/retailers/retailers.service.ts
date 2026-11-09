@@ -1,6 +1,18 @@
 import { PriceTier, Prisma } from '@prisma/client';
 import { prisma } from '../../config';
 
+interface InKhataPaymentRecord {
+  id: string;
+  retailerId: string;
+  amount: number;
+  paymentMode: string;
+  referenceNo: string;
+  notes?: string;
+  createdAt: Date;
+}
+
+const recordedPaymentsStore: InKhataPaymentRecord[] = [];
+
 export interface RetailerQueryParams {
   search?: string;
   priceTier?: PriceTier;
@@ -312,8 +324,26 @@ export class RetailersService {
       }
     }
 
-    // Reverse transactions so newest appears at the top
-    transactions.reverse();
+    // Add user-recorded payments in real-time
+    const relevantPayments = recordedPaymentsStore.filter((p) => p.retailerId === retailerId);
+    for (const p of relevantPayments) {
+      currentBalance = Math.max(0, currentBalance - p.amount);
+      transactions.push({
+        id: p.id,
+        date: p.createdAt.toISOString(),
+        type: 'PAYMENT',
+        referenceNo: p.referenceNo,
+        description: p.notes || `UPI Khata Repayment via Instant Settlement`,
+        debit: 0,
+        credit: p.amount,
+        runningBalance: Math.round(currentBalance * 100) / 100,
+        paymentMode: p.paymentMode,
+        status: 'SETTLED',
+      });
+    }
+
+    // Sort transactions so newest appears at the top
+    transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return {
       retailer: {
@@ -391,9 +421,20 @@ export class RetailersService {
       });
     }
 
+    const receiptNo = referenceNo || `PAY-REC-${Date.now().toString().slice(-6)}`;
+    recordedPaymentsStore.push({
+      id: `txn-pay-${Date.now()}`,
+      retailerId,
+      amount,
+      paymentMode,
+      referenceNo: receiptNo,
+      notes: notes || 'Instant UPI payment for Khata balance settlement',
+      createdAt: new Date(),
+    });
+
     return {
       success: true,
-      receiptNumber: referenceNo || `PAY-REC-${Date.now().toString().slice(-6)}`,
+      receiptNumber: receiptNo,
       amountPaid: amount,
       paymentMode,
       previousBalance: retailer.outstandingBalance,

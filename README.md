@@ -1,7 +1,9 @@
 # SupplySetu (सप्लाईसेतु)
 ### AI-Powered B2B FMCG Distribution & Order Management Platform
 **Primary Industry:** FMCG Distribution and Wholesale &bull; **Location:** Jabalpur, Madhya Pradesh, India  
-**Tagline:** *From WhatsApp Orders to Intelligent Distribution*
+**Tagline:** *From WhatsApp Orders to Intelligent Distribution*  
+**Live Application URL:** [https://supply-setu-gamma.vercel.app/](https://supply-setu-gamma.vercel.app/)  
+**GitHub Repository:** [https://github.com/krishnayadav9793/SupplySetu](https://github.com/krishnayadav9793/SupplySetu)
 
 ---
 

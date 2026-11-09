@@ -189,8 +189,9 @@ export const RetailerService = {
   },
 
   async recordPayment(retailerId: string, input: RecordPaymentInput) {
+    const encodedId = encodeURIComponent(retailerId || 'me');
     try {
-      const res = await apiFetch(`/retailers/${retailerId}/payments`, {
+      const res = await apiFetch(`/retailers/${encodedId}/payments`, {
         method: 'POST',
         body: JSON.stringify(input),
       });

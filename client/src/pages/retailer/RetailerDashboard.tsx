@@ -101,6 +101,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
 
   // Retailer Profile / Credit
   const [creditProfile, setCreditProfile] = useState<{
+    id?: string;
     shopName: string;
     creditLimit: number;
     outstandingBalance: number;
@@ -109,6 +110,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
     priceTier: 'STANDARD' | 'TIER_1' | 'TIER_2' | 'WHOLESALE';
     salesman?: { id?: string; name: string; phone: string } | null;
   }>({
+    id: user?.retailer?.id,
     shopName: user?.retailer?.shopName || 'Shri Ganesh Kirana & General Store',
     creditLimit: user?.retailer?.creditLimit || 75000,
     outstandingBalance: user?.retailer?.outstandingBalance || 14200,
@@ -156,7 +158,19 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
     try {
       const data = await RetailerService.getKhata();
       setKhataData(data);
-      setUpiPaymentAmount(data.retailer.outstandingBalance);
+      if (data?.retailer) {
+        setUpiPaymentAmount(data.retailer.outstandingBalance);
+        setCreditProfile((prev) => ({
+          ...prev,
+          id: data.retailer.id || prev.id,
+          shopName: data.retailer.shopName || prev.shopName,
+          creditLimit: data.retailer.creditLimit,
+          outstandingBalance: data.retailer.outstandingBalance,
+          availableCredit: data.retailer.availableCredit,
+          creditUtilization: data.retailer.creditUtilization,
+          priceTier: (data.retailer.priceTier as typeof prev.priceTier) || prev.priceTier,
+        }));
+      }
     } catch (err) {
       console.warn('Failed to load Khata statement:', err);
     } finally {
@@ -196,18 +210,35 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
     setIsSubmittingPayment(true);
     try {
       const refNo = `UPI-${Date.now().toString().slice(-6)}`;
-      await RetailerService.recordPayment(creditProfile.shopName, {
+      const targetRetailerId =
+        creditProfile.id || khataData?.retailer?.id || user?.retailer?.id || 'me';
+
+      await RetailerService.recordPayment(targetRetailerId, {
         amount: upiPaymentAmount,
         paymentMode: 'UPI_DIRECT',
         referenceNo: refNo,
         notes: `Instant UPI payment for Khata balance settlement`,
       });
 
+      const settledAmount = upiPaymentAmount;
       setToastMessage(
-        `✓ Payment of ₹${upiPaymentAmount.toLocaleString('en-IN')} recorded! Khata balance updated.`
+        `✓ Payment of ₹${settledAmount.toLocaleString('en-IN')} recorded! Khata balance updated.`
       );
       setTimeout(() => setToastMessage(null), 4000);
       setIsUpiModalOpen(false);
+
+      // Optimistically update credit profile immediately
+      setCreditProfile((prev) => {
+        const newBalance = Math.max(0, prev.outstandingBalance - settledAmount);
+        return {
+          ...prev,
+          outstandingBalance: newBalance,
+          availableCredit: Math.max(0, prev.creditLimit - newBalance),
+          creditUtilization:
+            prev.creditLimit > 0 ? Math.round((newBalance / prev.creditLimit) * 100) : 0,
+        };
+      });
+
       await Promise.all([loadCatalogue(), loadKhata()]);
     } catch (err) {
       console.error('Payment record error:', err);
@@ -379,7 +410,10 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsUpiModalOpen(true)}
+                onClick={() => {
+                  setUpiPaymentAmount(creditProfile.outstandingBalance);
+                  setIsUpiModalOpen(true);
+                }}
                 className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <QrCode className="w-4 h-4" />

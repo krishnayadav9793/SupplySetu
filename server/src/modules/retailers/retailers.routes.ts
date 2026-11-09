@@ -19,7 +19,10 @@ router.get('/:id', optionalAuthenticate, RetailersController.getRetailerById);
 // Specific retailer's Khata statement (Admin & Salesman)
 router.get('/:id/khata', optionalAuthenticate, RetailersController.getRetailerKhata);
 
-// Record payment received against Khata dues (Admin & Salesman)
+// Record payment for current retailer ('me')
+router.post('/me/payments', optionalAuthenticate, RetailersController.recordPayment);
+
+// Record payment received against Khata dues (Admin & Salesman or by retailer id/shopName)
 router.post('/:id/payments', optionalAuthenticate, RetailersController.recordPayment);
 
 // Update retailer
