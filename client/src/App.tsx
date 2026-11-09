@@ -11,17 +11,38 @@ import { DashboardSkeleton } from './components/common/DashboardSkeleton';
 import { ChangePasswordModal } from './components/common/ChangePasswordModal';
 import { useTabRouting } from './hooks/useTabRouting';
 
+// Resilient dynamic chunk loader to prevent blank screen if chunks refresh during deployment
+function lazyWithRetry<T extends React.ComponentType<any>>(factory: () => Promise<{ default: T }>) {
+  return lazy(async () => {
+    const hasReloaded = sessionStorage.getItem('supplysetu_chunk_reload');
+    try {
+      const component = await factory();
+      sessionStorage.removeItem('supplysetu_chunk_reload');
+      return component;
+    } catch (error) {
+      if (!hasReloaded) {
+        sessionStorage.setItem('supplysetu_chunk_reload', 'true');
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      throw error;
+    }
+  });
+}
+
 // Dynamically split dashboard bundles for optimal initial page-load performance
-const AdminDashboard = lazy(() =>
+const AdminDashboard = lazyWithRetry(() =>
   import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
 );
-const SalesmanDashboard = lazy(() =>
+const SalesmanDashboard = lazyWithRetry(() =>
   import('./pages/salesman/SalesmanDashboard').then((m) => ({ default: m.SalesmanDashboard }))
 );
-const RetailerDashboard = lazy(() =>
+const RetailerDashboard = lazyWithRetry(() =>
   import('./pages/retailer/RetailerDashboard').then((m) => ({ default: m.RetailerDashboard }))
 );
-const AuthPage = lazy(() => import('./pages/auth/AuthPage').then((m) => ({ default: m.AuthPage })));
+const AuthPage = lazyWithRetry(() =>
+  import('./pages/auth/AuthPage').then((m) => ({ default: m.AuthPage }))
+);
 
 function DashboardContent() {
   const { user, role, isVerifying, logout } = useAuth();

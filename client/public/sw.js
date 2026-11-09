@@ -1,5 +1,5 @@
 // SupplySetu Service Worker - Offline Shell & Cache
-const CACHE_NAME = 'supplysetu-pwa-v1';
+const CACHE_NAME = 'supplysetu-pwa-v2';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -32,15 +32,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-First for HTML document navigation to avoid black screens from stale chunks on redeploy
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => cached || caches.match('/'));
+        })
+    );
+    return;
+  }
+
+  // Cache-First for assets with network fallback
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       return (
         cachedResponse ||
-        fetch(event.request).catch(() => {
-          // Fallback for document navigation
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
+        fetch(event.request).then((networkResponse) => {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            event.request.url.includes('/assets/')
+          ) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
+          return networkResponse;
         })
       );
     })
