@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { OrdersController } from './orders.controller';
-import { authenticate, requireRoles, optionalAuthenticate } from '../../middleware/auth';
-import { Role } from '@prisma/client';
+import { optionalAuthenticate } from '../../middleware/auth';
+import { validate } from '../../middleware/validate';
+import { createOrderSchema } from './orders.schema';
 
 const router = Router();
 
-// Order creation (supports both authenticated retailers/salesmen and guest demo checkout)
-router.post('/', optionalAuthenticate, OrdersController.createOrder);
+// Order creation with Zod schema validation
+router.post('/', optionalAuthenticate, validate(createOrderSchema), OrdersController.createOrder);
 
 // Order listing (scoped by role)
 router.get('/', optionalAuthenticate, OrdersController.listOrders);

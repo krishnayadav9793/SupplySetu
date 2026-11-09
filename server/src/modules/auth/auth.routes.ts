@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { AuthController } from './auth.controller';
 import { authenticate } from '../../middleware/auth';
+import { validate } from '../../middleware/validate';
+import { registerSchema, loginSchema } from './auth.schema';
 
 const router = Router();
 
-// Public routes
-router.post('/register', AuthController.register);
-router.post('/login', AuthController.login);
+// Public routes with Zod request validation
+router.post('/register', validate(registerSchema), AuthController.register);
+router.post('/login', validate(loginSchema), AuthController.login);
 router.get('/demo-accounts', AuthController.getDemoAccounts);
 
 // Protected routes
