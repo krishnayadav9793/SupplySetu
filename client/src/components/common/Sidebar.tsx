@@ -65,9 +65,9 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
       { id: 'shop', label: 'Catalogue', icon: Package },
       { id: 'cart', label: 'Cart', icon: ShoppingCart, badge: totalUniqueItems },
       { id: 'ai-pad', label: 'AI Order Pad', icon: Sparkles },
-      { id: 'schemes', label: 'Trade Schemes', icon: Percent },
-      { id: 'my-orders', label: 'My Orders', icon: ReceiptText },
-      { id: 'credit', label: 'Khata Ledger', icon: Wallet },
+      { id: 'schemes', label: 'Deals', icon: Percent },
+      { id: 'my-orders', label: 'Orders', icon: ReceiptText },
+      { id: 'credit', label: 'Khata', icon: Wallet },
     ];
   };
 
@@ -75,7 +75,8 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
 
   return (
     <>
-      <aside className="w-16 border-r border-slate-200/80 dark:border-[#1E222A] bg-white dark:bg-[#121418] flex flex-col items-center py-4 gap-6 select-none flex-shrink-0 z-20">
+      {/* Desktop Vertical Sidebar */}
+      <aside className="hidden sm:flex w-16 border-r border-slate-200/80 dark:border-[#1E222A] bg-white dark:bg-[#121418] flex-col items-center py-4 gap-6 select-none flex-shrink-0 z-20">
         {/* Top Group: Pages */}
         <div className="flex flex-col items-center gap-2.5 w-full">
           <span className="text-[9px] font-bold tracking-wider text-slate-400 dark:text-slate-400 uppercase">
@@ -88,6 +89,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => {
                   setCurrentTab(item.id);
                   if (item.id === 'cart') setIsCartDrawerOpen(true);
@@ -113,6 +115,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
         {/* Bottom Group: Settings & Help */}
         <div className="flex flex-col items-center gap-2.5 w-full mt-auto pt-3 border-t border-slate-100 dark:border-[#1E222A]">
           <button
+            type="button"
             onClick={() => setShowSettingsModal(true)}
             title="Settings & Session"
             className="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1A1D24] transition-colors cursor-pointer"
@@ -120,6 +123,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             <Settings className="h-4 w-4" />
           </button>
           <button
+            type="button"
             onClick={() => setShowHelpModal(true)}
             title="Help & Jabalpur Support"
             className="h-9 w-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1A1D24] transition-colors cursor-pointer"
@@ -128,6 +132,62 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
           </button>
         </div>
       </aside>
+
+      {/* Mobile Bottom Navigation Bar (Retailers & Mobile Viewports) */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-[#121418]/95 backdrop-blur-md border-t border-slate-200/80 dark:border-[#1E222A] z-40 flex items-center justify-around px-1 select-none shadow-lg pb-safe"
+      >
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setCurrentTab(item.id);
+                if (item.id === 'cart') setIsCartDrawerOpen(true);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 gap-0.5 transition-all cursor-pointer ${
+                isActive
+                  ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+              }`}
+            >
+              <div className="relative">
+                <div
+                  className={`p-1 rounded-xl transition-all ${
+                    isActive
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                      : ''
+                  }`}
+                >
+                  <Icon className="h-4.5 w-4.5" />
+                </div>
+                {item.badge && item.badge > 0 ? (
+                  <span className="absolute -top-1 -right-1 h-3.5 min-w-[14px] px-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#121418]">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </div>
+              <span className="text-[10px] tracking-tight leading-none truncate max-w-[52px]">
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setShowSettingsModal(true)}
+          className="flex flex-col items-center justify-center flex-1 py-1 gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+        >
+          <div className="p-1 rounded-xl">
+            <Settings className="h-4.5 w-4.5" />
+          </div>
+          <span className="text-[10px] tracking-tight leading-none">Settings</span>
+        </button>
+      </nav>
 
       {/* Help & Support Modal */}
       {showHelpModal && (
@@ -141,8 +201,9 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowHelpModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -174,6 +235,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             </div>
 
             <button
+              type="button"
               onClick={() => setShowHelpModal(false)}
               className="mt-4 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
             >
@@ -195,8 +257,9 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowSettingsModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -252,6 +315,7 @@ export const Sidebar = ({ currentTab, setCurrentTab }: SidebarProps) => {
             </div>
 
             <button
+              type="button"
               onClick={() => setShowSettingsModal(false)}
               className="mt-4 w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow-xs cursor-pointer"
             >

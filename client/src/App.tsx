@@ -65,7 +65,7 @@ function DashboardContent() {
       <div className="flex flex-1 overflow-hidden w-full">
         <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-7 overflow-y-auto bg-slate-50/60 dark:bg-[#0E1015]">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-7 overflow-y-auto pb-24 sm:pb-8 bg-slate-50/60 dark:bg-[#0E1015]">
           <ErrorBoundary>
             <Suspense fallback={<DashboardSkeleton />}>
               {/* Strictly separate dashboards based on authorized user role */}

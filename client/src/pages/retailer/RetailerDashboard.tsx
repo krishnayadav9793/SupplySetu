@@ -234,29 +234,29 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
       )}
 
       {/* Top Banner: Retailer Welcome & Credit Khata Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
         {/* Welcome & Shop Info */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white dark:bg-[#16181E] rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 flex items-center gap-1 whitespace-nowrap">
                 <Store className="w-3 h-3" /> Verified FMCG Retailer
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 whitespace-nowrap">
                 Jabalpur Beat #4 &bull; {creditProfile.priceTier} Pricing
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white break-words leading-tight">
               {creditProfile.shopName}
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 break-words">
               Owner: {user?.name || 'Anil Patel'} &bull; Sarafa Chowk, Lordganj, Jabalpur
             </p>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-[#222631] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="mt-4 sm:mt-5 pt-3.5 sm:pt-4 border-t border-slate-100 dark:border-[#222631] flex flex-wrap items-center justify-between gap-2.5 text-xs">
             <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-              <Clock className="h-4 w-4 text-emerald-500" />
+              <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
               <span>
                 Next Delivery: <strong>Tomorrow Morning (9:30 AM)</strong>
               </span>
@@ -265,7 +265,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
               >
                 <ShoppingBag className="h-3.5 w-3.5" />
                 <span>View Cart ({totalItemsCount})</span>
@@ -275,27 +275,29 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
         </div>
 
         {/* Khata / Credit Limit Widget */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#16181E] rounded-2xl p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs">
+        <div className="lg:col-span-5 bg-white dark:bg-[#16181E] rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-[#222631] shadow-xs flex flex-col justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs flex-shrink-0">
                 <Wallet className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400">Distributor Credit Khata</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs font-semibold text-slate-400 truncate">
+                  Distributor Credit Khata
+                </p>
+                <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap">
                   ₹{creditProfile.availableCredit.toLocaleString('en-IN')}{' '}
                   <span className="text-xs font-normal text-slate-400">Available</span>
                 </p>
               </div>
             </div>
-            <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+            <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/20 whitespace-nowrap">
               Tier: {creditProfile.priceTier}
             </span>
           </div>
 
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-3.5 sm:mt-4 space-y-1.5">
+            <div className="flex flex-wrap justify-between items-center text-xs text-slate-500 dark:text-slate-400 gap-1">
               <span>Outstanding: ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}</span>
               <span>Limit: ₹{creditProfile.creditLimit.toLocaleString('en-IN')}</span>
             </div>
@@ -314,13 +316,13 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#222631] flex items-center justify-between text-[11px] text-slate-400">
-            <span>
+          <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-[#222631] flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+            <span className="truncate max-w-[220px]">
               Salesman: {creditProfile.salesman?.name} ({creditProfile.salesman?.phone})
             </span>
             <span
               onClick={() => setCurrentTab && setCurrentTab('credit')}
-              className="text-emerald-500 font-semibold cursor-pointer hover:underline flex items-center gap-1"
+              className="text-emerald-500 font-semibold cursor-pointer hover:underline flex items-center gap-1 whitespace-nowrap"
             >
               <span>View Full Khata</span> &rarr;
             </span>
@@ -329,16 +331,16 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
       </div>
 
       {/* AI Smart Order Capture Quick Prompt */}
-      <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent rounded-2xl p-4 sm:p-5 border border-emerald-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
+      <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent rounded-2xl p-4 sm:p-5 border border-emerald-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4">
+        <div className="flex items-start sm:items-center gap-3 sm:gap-3.5 min-w-0">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-[0_4px_16px_rgba(16,185,129,0.35)] flex-shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              AI Multimodal WhatsApp & Slip Order Capture
+          <div className="min-w-0">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words">
+              AI Multimodal WhatsApp &amp; Slip Order Capture
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed break-words">
               Snap a photo of your handwritten paper slip (&ldquo;Parchi&rdquo;), paste WhatsApp
               text, or record voice note in Hindi.
             </p>
@@ -348,7 +350,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
         <button
           type="button"
           onClick={() => setIsAiOrderPadOpen(true)}
-          className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2 hover:opacity-95 transition-all flex-shrink-0 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 hover:opacity-95 transition-all flex-shrink-0 cursor-pointer whitespace-nowrap"
         >
           <span>Open AI Order Pad</span>
           <ArrowRight className="h-3.5 w-3.5" />
@@ -394,45 +396,47 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
           </div>
 
           {/* Khata Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
-            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+            <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">
                 Credit Limit
               </span>
-              <p className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5 truncate">
                 ₹{creditProfile.creditLimit.toLocaleString('en-IN')}
               </p>
-              <span className="text-[10px] text-slate-400">Assigned by Distributor</span>
+              <span className="text-[10px] text-slate-400 truncate block">
+                Assigned by Distributor
+              </span>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">
                 Current Outstanding
               </span>
-              <p className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+              <p className="text-base sm:text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5 truncate">
                 ₹{creditProfile.outstandingBalance.toLocaleString('en-IN')}
               </p>
-              <span className="text-[10px] text-slate-400">Payable within 7 days</span>
+              <span className="text-[10px] text-slate-400 truncate block">Payable in 7 days</span>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Available Credit Line
+            <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">
+                Available Credit
               </span>
-              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <p className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
                 ₹{creditProfile.availableCredit.toLocaleString('en-IN')}
               </p>
-              <span className="text-[10px] text-slate-400">Usable for new orders</span>
+              <span className="text-[10px] text-slate-400 truncate block">For new orders</span>
             </div>
 
-            <div className="p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <div className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E]">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">
                 Khata Health
               </span>
-              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4" /> Good Standing
+              <p className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 truncate">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> Good Standing
               </p>
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-slate-400 truncate block">
                 {creditProfile.creditUtilization}% Limit Utilized
               </span>
             </div>
@@ -440,7 +444,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
 
           {/* Passbook Transaction Table */}
           <div className="rounded-2xl border border-slate-200/80 dark:border-[#222631] bg-white dark:bg-[#16181E] overflow-hidden shadow-xs">
-            <div className="p-4 border-b border-slate-100 dark:border-[#222631] flex items-center justify-between">
+            <div className="p-4 border-b border-slate-100 dark:border-[#222631] flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Khata Transaction Ledger</span>
                 <span className="text-xs font-normal text-slate-400">
@@ -450,7 +454,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
               <button
                 type="button"
                 onClick={loadKhata}
-                className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1"
+                className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingKhata ? 'animate-spin' : ''}`} />
                 <span>Refresh Passbook</span>
@@ -458,7 +462,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs border-collapse min-w-[640px]">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-[#1a1e27] text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-[#222631]">
                     <th className="py-3 px-4">Date & Time</th>
@@ -546,7 +550,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
       /* ---------------------------------------------------------------- */
       currentTab === 'my-orders' ? (
         <div className="space-y-4 animate-fadeIn">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Placed Orders</h2>
               <p className="text-xs text-slate-400">
@@ -587,7 +591,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
                         <Package className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-sm text-slate-900 dark:text-white">
                             {order.orderNumber}
                           </span>
@@ -608,14 +612,14 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
                           </span>
                         </div>
 
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 break-words">
                           {order.items
                             .map((i) => `${i.product?.name || 'Product'} (${i.quantity} ${i.unit})`)
                             .join(', ')}
                         </p>
 
                         {/* Order Progress Timeline */}
-                        <div className="flex items-center gap-2 my-2 text-[11px] font-semibold">
+                        <div className="flex items-center gap-x-2 gap-y-1 flex-wrap my-2 text-[11px] font-semibold">
                           <div className="flex items-center gap-1 text-emerald-600">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             <span>Placed</span>
@@ -697,7 +701,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-right sm:border-l sm:border-slate-100 dark:sm:border-slate-800 sm:pl-6 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end gap-2">
+                    <div className="text-right sm:border-l sm:border-slate-100 dark:sm:border-slate-800 sm:pl-6 w-full sm:w-auto flex flex-wrap sm:flex-col justify-between sm:justify-start items-center sm:items-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                       <div>
                         <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
                           Total Amount
@@ -781,7 +785,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {schemes.map((scheme) => {
               const matchedProduct = products.find((p) => p.id === scheme.productId) || products[0];
               const isBuyXGetY = scheme.schemeType === 'BUY_X_GET_Y_FREE';
@@ -863,24 +867,23 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
         /* TAB 3: PRODUCT CATALOGUE (DEFAULT)                              */
         /* ---------------------------------------------------------------- */
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                 <span>FMCG Product Catalogue</span>
-                <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
                   Personalized Rates
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Showing official distributor wholesale rates & active promotional schemes for your
-                shop
+                Official distributor wholesale rates &amp; active promotional schemes for your shop
               </p>
             </div>
 
             <button
               type="button"
               onClick={loadCatalogue}
-              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="Refresh catalogue"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -916,7 +919,7 @@ export const RetailerDashboard: React.FC<RetailerDashboardProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
